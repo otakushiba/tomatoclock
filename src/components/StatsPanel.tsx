@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useStatsStore } from '@/stores/statsStore';
 import { useTimerStore } from '@/stores/timerStore';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, defs, linearGradient, stop } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const StatsPanel = () => {
   const { history } = useStatsStore();
