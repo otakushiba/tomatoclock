@@ -1,73 +1,30 @@
-# Welcome to your Lovable project
+# 🍅 Pomodoro Timer
 
-## Project info
+A personal pomodoro timer I built to experiment with a new AI-assisted design workflow — using Claude to define requirements, generate Lovable prompts, and iterate on UI direction before writing any code.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Built for my own daily use. No accounts, no sync, just a fast and focused timer that lives on my phone's home screen.
 
-## How can I edit this code?
+## About this project
 
-There are several ways of editing your application.
+This started as an experiment: how far can you get in product design by talking through decisions with an AI before opening a code editor?
 
-**Use Lovable**
+The workflow went roughly —
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+1. **Claude** — talked through feature scope, generated the MVP spec, defined component structure and TypeScript types, and produced a full Lovable prompt with design specs and animation details
+2. **Lovable** — scaffolded the entire project from the prompt, handled the React/PWA setup and initial UI
+3. **Claude Code** — used for iterating on logic, fixing edge cases, and refining behaviour after the initial generation
 
-Changes made via Lovable will be committed automatically to this repo.
+The whole thing from first conversation to working PWA took a single session. The AI tools handled the scaffolding; I just made the decisions.
 
-**Use your preferred IDE**
+## Features
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Focus / Short Break / Long Break modes with customizable durations
+- Task list with estimated vs actual pomodoro tracking
+- Daily and weekly stats
+- Sound alert on timer end
+- Browser tab countdown
+- PWA — installable on mobile, works offline
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Usage
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This is a personal tool and not actively maintained as an open source project. Feel free to fork it and adapt it for your own use.
