@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTimerStore } from '@/stores/timerStore';
-import { getGradientStyle } from '@/lib/timer-utils';
 import ModeTabs from '@/components/ModeTabs';
 import ProgressRing from '@/components/ProgressRing';
 import TaskList from '@/components/TaskList';
@@ -10,23 +9,20 @@ import MobileTabBar, { type MobileTab } from '@/components/MobileTabBar';
 import { Settings } from 'lucide-react';
 
 const Index = () => {
-  const { mode, todayPomodoros } = useTimerStore();
+  const { todayPomodoros } = useTimerStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('timer');
 
   return (
-    <div
-      className="min-h-[100dvh] font-primary text-white flex flex-col"
-      style={getGradientStyle(mode)}
-    >
+    <div className="min-h-[100dvh] font-primary text-white flex flex-col" style={{ background: 'hsl(234 30% 10%)' }}>
       {/* Header */}
       <header className="glass-sm flex items-center justify-between px-6 py-3 mx-4 mt-4 md:mx-8" style={{ borderRadius: '16px' }}>
-        <h1 className="text-xl font-extrabold tracking-tight">🍅 FocusFlow</h1>
+        <h1 className="text-xl font-extrabold tracking-tight text-white/90">🍅 FocusFlow</h1>
         <button
           onClick={() => setSettingsOpen(true)}
-          className="p-2 rounded-full hover:bg-white/15 transition-colors"
+          className="p-2 rounded-full hover:bg-white/10 transition-colors"
         >
-          <Settings size={22} />
+          <Settings size={22} className="text-white/50" />
         </button>
       </header>
 
@@ -36,8 +32,8 @@ const Index = () => {
         <div className="flex-1 flex flex-col items-center gap-8 justify-center">
           <ModeTabs />
           <ProgressRing />
-          <div className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>
-            今日完成：🍅 × {todayPomodoros}
+          <div className="text-sm font-semibold text-white/30">
+            Today: 🍅 × {todayPomodoros}
           </div>
         </div>
         {/* Right: Tasks + Stats */}
@@ -53,8 +49,8 @@ const Index = () => {
           <div className="flex flex-col items-center gap-6 pt-4">
             <ModeTabs />
             <ProgressRing />
-            <div className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              今日完成：🍅 × {todayPomodoros}
+            <div className="text-sm font-semibold text-white/30">
+              Today: 🍅 × {todayPomodoros}
             </div>
           </div>
         )}

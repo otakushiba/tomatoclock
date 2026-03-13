@@ -1,20 +1,19 @@
 import { TimerMode } from '@/stores/timerStore';
 
-export const GRADIENTS: Record<TimerMode, { from: string; to: string }> = {
-  focus: { from: '#f953c6', to: '#b91d73' },
-  shortBreak: { from: '#43e97b', to: '#38f9d7' },
-  longBreak: { from: '#4facfe', to: '#00f2fe' },
+export const ACCENT_COLORS: Record<TimerMode, string> = {
+  focus: '#f953c6',
+  shortBreak: '#43e97b',
+  longBreak: '#4facfe',
 };
 
-export const MODE_LABELS: Record<TimerMode, { emoji: string; label: string }> = {
-  focus: { emoji: '🍅', label: '專注' },
-  shortBreak: { emoji: '☕', label: '短休' },
-  longBreak: { emoji: '🌿', label: '長休' },
+export const MODE_LABELS: Record<TimerMode, { emoji: string; label: string; tabTitle: string }> = {
+  focus: { emoji: '🍅', label: 'Focus', tabTitle: 'Focusing' },
+  shortBreak: { emoji: '☕', label: 'Short Break', tabTitle: 'Short Break' },
+  longBreak: { emoji: '🌿', label: 'Long Break', tabTitle: 'Long Break' },
 };
 
-export const getGradientStyle = (mode: TimerMode) => ({
-  background: `linear-gradient(135deg, ${GRADIENTS[mode].from}, ${GRADIENTS[mode].to})`,
-  transition: 'background 0.8s ease',
+export const getGradientStyle = (_mode: TimerMode) => ({
+  background: 'hsl(234 30% 10%)',
 });
 
 export const playCompletionSound = () => {

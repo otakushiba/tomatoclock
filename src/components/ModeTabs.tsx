@@ -1,5 +1,5 @@
 import { useTimerStore, TimerMode } from '@/stores/timerStore';
-import { MODE_LABELS } from '@/lib/timer-utils';
+import { MODE_LABELS, ACCENT_COLORS } from '@/lib/timer-utils';
 
 const modes: TimerMode[] = ['focus', 'shortBreak', 'longBreak'];
 
@@ -15,10 +15,10 @@ const ModeTabs = () => {
           disabled={isRunning}
           className={`px-5 py-2 rounded-pill font-bold text-sm transition-all duration-200 ${
             mode === m
-              ? 'bg-white/90 shadow-md'
-              : 'text-white/80 hover:text-white hover:bg-white/10'
+              ? 'shadow-md'
+              : 'text-white/50 hover:text-white/80 hover:bg-white/5'
           } disabled:opacity-60`}
-          style={mode === m ? { color: m === 'focus' ? '#b91d73' : m === 'shortBreak' ? '#2db87a' : '#0086d1' } : {}}
+          style={mode === m ? { background: ACCENT_COLORS[m], color: 'white' } : {}}
         >
           {MODE_LABELS[m].emoji} {MODE_LABELS[m].label}
         </button>
