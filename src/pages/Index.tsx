@@ -6,24 +6,35 @@ import TaskList from '@/components/TaskList';
 import StatsPanel from '@/components/StatsPanel';
 import SettingsModal from '@/components/SettingsModal';
 import MobileTabBar, { type MobileTab } from '@/components/MobileTabBar';
-import { Settings } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const { todayPomodoros } = useTimerStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('timer');
+  const { signOut } = useAuth();
 
   return (
     <div className="min-h-[100dvh] font-primary text-white flex flex-col" style={{ background: 'hsl(234 30% 10%)' }}>
       {/* Header */}
       <header className="glass-sm flex items-center justify-between px-6 py-3 mx-4 mt-4 md:mx-8" style={{ borderRadius: '16px' }}>
         <h1 className="text-xl font-extrabold tracking-tight text-white/90">🍅 FocusFlow</h1>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors"
-        >
-          <Settings size={22} className="text-white/50" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <Settings size={22} className="text-white/50" />
+          </button>
+          <button
+            onClick={() => signOut()}
+            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            title="登出"
+          >
+            <LogOut size={22} className="text-white/50" />
+          </button>
+        </div>
       </header>
 
       {/* Desktop layout */}
