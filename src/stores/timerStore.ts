@@ -21,6 +21,7 @@ interface TimerState {
   completedPomodoros: number;
   todayPomodoros: number;
   todayDate: string;
+  sessionStartedAt: string | null;
   settings: Settings;
   setMode: (mode: TimerMode) => void;
   start: () => void;
@@ -52,6 +53,7 @@ export const useTimerStore = create<TimerState>()(
       completedPomodoros: 0,
       todayPomodoros: 0,
       todayDate: getToday(),
+      sessionStartedAt: null,
       settings: {
         focusMinutes: 25,
         shortBreakMinutes: 5,
@@ -65,8 +67,11 @@ export const useTimerStore = create<TimerState>()(
         set({ mode, secondsLeft: getModeSeconds(mode, s), isRunning: false, startTimestamp: null, pausedSecondsLeft: null });
       },
       start: () => {
-        const { secondsLeft } = get();
-        set({ isRunning: true, startTimestamp: Date.now(), pausedSecondsLeft: secondsLeft });
+        const { secondsLeft, mode, sessionStartedAt } = get();
+        const newSessionStartedAt = mode === 'focus' && !sessionStartedAt
+          ? new Date().toISOString()
+          : sessionStartedAt;
+        set({ isRunning: true, startTimestamp: Date.now(), pausedSecondsLeft: secondsLeft, sessionStartedAt: newSessionStartedAt });
       },
       pause: () => {
         set({ isRunning: false, startTimestamp: null, pausedSecondsLeft: get().secondsLeft });
@@ -103,6 +108,7 @@ export const useTimerStore = create<TimerState>()(
             todayDate: today,
             mode: nextMode,
             secondsLeft: getModeSeconds(nextMode, settings),
+            sessionStartedAt: null,
           });
           if (settings.autoStartNextSession) {
             setTimeout(() => get().start(), 500);

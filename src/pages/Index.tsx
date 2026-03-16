@@ -6,14 +6,20 @@ import TaskList from '@/components/TaskList';
 import StatsPanel from '@/components/StatsPanel';
 import SettingsModal from '@/components/SettingsModal';
 import MobileTabBar, { type MobileTab } from '@/components/MobileTabBar';
-import { Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut, UserCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { useSessionRecorder } from '@/hooks/useSessionRecorder';
 
 const Index = () => {
   const { todayPomodoros } = useTimerStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('timer');
   const { signOut } = useAuth();
+  const { profile } = useProfile();
+  const navigate = useNavigate();
+  useSessionRecorder();
 
   return (
     <div className="min-h-[100dvh] font-primary text-white flex flex-col" style={{ background: 'hsl(234 30% 10%)' }}>
@@ -26,6 +32,21 @@ const Index = () => {
             className="p-2 rounded-full hover:bg-white/10 transition-colors"
           >
             <Settings size={22} className="text-white/50" />
+          </button>
+          <button
+            onClick={() => navigate('/profile')}
+            className="p-1 rounded-full hover:bg-white/10 transition-colors"
+            title="個人資料"
+          >
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt="avatar"
+                className="w-7 h-7 rounded-full object-cover"
+              />
+            ) : (
+              <UserCircle size={26} className="text-white/50" />
+            )}
           </button>
           <button
             onClick={() => signOut()}

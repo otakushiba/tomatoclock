@@ -22,7 +22,7 @@ const AuthContext = createContext<AuthContextValue>({
 
 async function ensureProfile(user: User) {
   await supabase.from("profiles").upsert(
-    { id: user.id, updated_at: new Date().toISOString() },
+    { id: user.id, display_name: null, avatar_url: null, bio: null, updated_at: new Date().toISOString() },
     { onConflict: "id", ignoreDuplicates: true }
   );
 }

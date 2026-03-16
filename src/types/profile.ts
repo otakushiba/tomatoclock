@@ -1,9 +1,9 @@
 export interface Profile {
   id: string;
-  username: string | null;
-  full_name: string | null;
+  display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
   updated_at: string | null;
 }
 
-export type ProfileUpdate = Omit<Profile, "id" | "updated_at">;
+export type ProfileUpdate = Pick<Profile, "display_name" | "avatar_url" | "bio">;
