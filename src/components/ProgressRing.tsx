@@ -10,7 +10,7 @@ const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 const ProgressRing = () => {
-  const { mode, secondsLeft, isRunning, settings, start, pause, reset, tick } = useTimerStore();
+  const { mode, secondsLeft, isRunning, settings, sessionStartedAt, start, pause, reset, tick, interruptSession } = useTimerStore();
   const { activeTaskId, incrementPomodoro } = useTaskStore();
   const { addPomodoro } = useStatsStore();
   const [completed, setCompleted] = useState(false);
@@ -138,6 +138,15 @@ const ProgressRing = () => {
           ↺ Reset
         </button>
       </div>
+
+      {mode === 'focus' && sessionStartedAt && (
+        <button
+          onClick={interruptSession}
+          className="btn-pill px-5 py-2 text-sm border border-red-500/30 text-red-400/70 hover:text-red-300 hover:border-red-400/50 hover:bg-red-500/10 transition-colors"
+        >
+          ✕ 提早結束
+        </button>
+      )}
     </div>
   );
 };

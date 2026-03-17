@@ -22,6 +22,7 @@ interface TimerState {
   todayPomodoros: number;
   todayDate: string;
   sessionStartedAt: string | null;
+  pendingInterruptedSession: { startedAt: string; endedAt: string; durationMin: number } | null;
   settings: Settings;
   setMode: (mode: TimerMode) => void;
   start: () => void;
@@ -29,6 +30,8 @@ interface TimerState {
   reset: () => void;
   tick: () => void;
   completeSession: () => void;
+  interruptSession: () => void;
+  clearPendingInterruptedSession: () => void;
   updateSettings: (settings: Partial<Settings>) => void;
 }
 
@@ -54,6 +57,7 @@ export const useTimerStore = create<TimerState>()(
       todayPomodoros: 0,
       todayDate: getToday(),
       sessionStartedAt: null,
+      pendingInterruptedSession: null,
       settings: {
         focusMinutes: 25,
         shortBreakMinutes: 5,
@@ -127,6 +131,24 @@ export const useTimerStore = create<TimerState>()(
             setTimeout(() => get().start(), 500);
           }
         }
+      },
+      interruptSession: () => {
+        const { settings, sessionStartedAt, secondsLeft } = get();
+        const endedAt = new Date().toISOString();
+        const elapsedSeconds = settings.focusMinutes * 60 - secondsLeft;
+        const durationMin = Math.max(1, Math.floor(elapsedSeconds / 60));
+        const startedAt = sessionStartedAt ?? endedAt;
+        set({
+          isRunning: false,
+          startTimestamp: null,
+          pausedSecondsLeft: null,
+          sessionStartedAt: null,
+          secondsLeft: getModeSeconds('focus', settings),
+          pendingInterruptedSession: { startedAt, endedAt, durationMin },
+        });
+      },
+      clearPendingInterruptedSession: () => {
+        set({ pendingInterruptedSession: null });
       },
       updateSettings: (partial) => {
         const newSettings = { ...get().settings, ...partial };

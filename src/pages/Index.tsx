@@ -6,7 +6,7 @@ import TaskList from '@/components/TaskList';
 import StatsPanel from '@/components/StatsPanel';
 import SettingsModal from '@/components/SettingsModal';
 import MobileTabBar, { type MobileTab } from '@/components/MobileTabBar';
-import { Settings, LogOut, UserCircle } from 'lucide-react';
+import { Settings, LogOut, UserCircle, BarChart2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -27,6 +27,13 @@ const Index = () => {
       <header className="glass-sm flex items-center justify-between px-6 py-3 mx-4 mt-4 md:mx-8" style={{ borderRadius: '16px' }}>
         <h1 className="text-xl font-extrabold tracking-tight text-white/90">🍅 FocusFlow</h1>
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => navigate('/report')}
+            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            title="報告"
+          >
+            <BarChart2 size={22} className="text-white/50" />
+          </button>
           <button
             onClick={() => setSettingsOpen(true)}
             className="p-2 rounded-full hover:bg-white/10 transition-colors"
