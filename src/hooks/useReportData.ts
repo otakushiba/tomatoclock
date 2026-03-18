@@ -23,7 +23,7 @@ async function fetchTodaySummary(userId: string) {
 
 // ── 本週每天番茄數 ──────────────────────────────────────────
 async function fetchWeeklyData(userId: string) {
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // 週一起
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const { data, error } = await supabase
     .from("pomodoro_sessions")
     .select("started_at")
@@ -75,6 +75,48 @@ async function fetchTaskDistribution(userId: string) {
     .slice(0, 8);
 }
 
+// ── 各專案專注時間分佈 ──────────────────────────────────────
+async function fetchProjectDistribution(userId: string) {
+  // Fetch sessions with project_id
+  const [sessionsRes, projectsRes] = await Promise.all([
+    supabase
+      .from("pomodoro_sessions")
+      .select("project_id, duration_min")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .not("project_id", "is", null),
+    supabase
+      .from("projects")
+      .select("id, name, color")
+      .eq("user_id", userId),
+  ]);
+
+  if (sessionsRes.error) throw sessionsRes.error;
+  if (projectsRes.error) throw projectsRes.error;
+
+  const projectMap = new Map(projectsRes.data.map((p) => [p.id, p]));
+
+  const minutesByProject: Record<string, number> = {};
+  sessionsRes.data.forEach((s) => {
+    if (!s.project_id) return;
+    minutesByProject[s.project_id] = (minutesByProject[s.project_id] ?? 0) + (s.duration_min ?? 0);
+  });
+
+  const total = Object.values(minutesByProject).reduce((a, b) => a + b, 0);
+  return Object.entries(minutesByProject)
+    .map(([projectId, minutes]) => {
+      const project = projectMap.get(projectId);
+      return {
+        id: projectId,
+        name: project?.name ?? "（已刪除專案）",
+        color: project?.color ?? "#666",
+        minutes,
+        percent: total > 0 ? Math.round((minutes / total) * 100) : 0,
+      };
+    })
+    .sort((a, b) => b.minutes - a.minutes);
+}
+
 // ── Hooks ───────────────────────────────────────────────────
 export function useTodaySummary() {
   const { user } = useAuth();
@@ -99,6 +141,15 @@ export function useTaskDistribution() {
   return useQuery({
     queryKey: ["report", "tasks", user?.id],
     queryFn: () => fetchTaskDistribution(user!.id),
+    enabled: !!user,
+  });
+}
+
+export function useProjectDistribution() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["report", "projects", user?.id],
+    queryFn: () => fetchProjectDistribution(user!.id),
     enabled: !!user,
   });
 }

@@ -12,6 +12,14 @@ export interface Settings {
   soundEnabled: boolean;
 }
 
+export interface PendingRecordSession {
+  startedAt: string;
+  endedAt: string;
+  durationMin: number;
+  mode: TimerMode;
+  status: 'completed' | 'skipped';
+}
+
 interface TimerState {
   mode: TimerMode;
   secondsLeft: number;
@@ -22,7 +30,7 @@ interface TimerState {
   todayPomodoros: number;
   todayDate: string;
   sessionStartedAt: string | null;
-  pendingInterruptedSession: { startedAt: string; endedAt: string; durationMin: number } | null;
+  pendingRecordSession: PendingRecordSession | null;
   settings: Settings;
   setMode: (mode: TimerMode) => void;
   start: () => void;
@@ -30,8 +38,8 @@ interface TimerState {
   reset: () => void;
   tick: () => void;
   completeSession: () => void;
-  interruptSession: () => void;
-  clearPendingInterruptedSession: () => void;
+  skipSession: () => void;
+  clearPendingRecordSession: () => void;
   updateSettings: (settings: Partial<Settings>) => void;
 }
 
@@ -57,7 +65,7 @@ export const useTimerStore = create<TimerState>()(
       todayPomodoros: 0,
       todayDate: getToday(),
       sessionStartedAt: null,
-      pendingInterruptedSession: null,
+      pendingRecordSession: null,
       settings: {
         focusMinutes: 25,
         shortBreakMinutes: 5,
@@ -68,13 +76,11 @@ export const useTimerStore = create<TimerState>()(
       },
       setMode: (mode) => {
         const s = get().settings;
-        set({ mode, secondsLeft: getModeSeconds(mode, s), isRunning: false, startTimestamp: null, pausedSecondsLeft: null });
+        set({ mode, secondsLeft: getModeSeconds(mode, s), isRunning: false, startTimestamp: null, pausedSecondsLeft: null, sessionStartedAt: null });
       },
       start: () => {
-        const { secondsLeft, mode, sessionStartedAt } = get();
-        const newSessionStartedAt = mode === 'focus' && !sessionStartedAt
-          ? new Date().toISOString()
-          : sessionStartedAt;
+        const { secondsLeft, sessionStartedAt } = get();
+        const newSessionStartedAt = sessionStartedAt ?? new Date().toISOString();
         set({ isRunning: true, startTimestamp: Date.now(), pausedSecondsLeft: secondsLeft, sessionStartedAt: newSessionStartedAt });
       },
       pause: () => {
@@ -82,7 +88,7 @@ export const useTimerStore = create<TimerState>()(
       },
       reset: () => {
         const { mode, settings } = get();
-        set({ secondsLeft: getModeSeconds(mode, settings), isRunning: false, startTimestamp: null, pausedSecondsLeft: null });
+        set({ secondsLeft: getModeSeconds(mode, settings), isRunning: false, startTimestamp: null, pausedSecondsLeft: null, sessionStartedAt: null });
       },
       tick: () => {
         const { isRunning, startTimestamp, pausedSecondsLeft } = get();
@@ -95,9 +101,11 @@ export const useTimerStore = create<TimerState>()(
         }
       },
       completeSession: () => {
-        const { mode, settings, completedPomodoros, todayDate } = get();
+        const { mode, settings, completedPomodoros, todayDate, sessionStartedAt } = get();
         const today = getToday();
         let newTodayPomodoros = todayDate === today ? get().todayPomodoros : 0;
+        const endedAt = new Date().toISOString();
+        const startedAt = sessionStartedAt ?? endedAt;
 
         if (mode === 'focus') {
           const newCompleted = completedPomodoros + 1;
@@ -113,11 +121,19 @@ export const useTimerStore = create<TimerState>()(
             mode: nextMode,
             secondsLeft: getModeSeconds(nextMode, settings),
             sessionStartedAt: null,
+            pendingRecordSession: {
+              startedAt,
+              endedAt,
+              durationMin: settings.focusMinutes,
+              mode: 'focus',
+              status: 'completed',
+            },
           });
           if (settings.autoStartNextSession) {
             setTimeout(() => get().start(), 500);
           }
         } else {
+          const breakDuration = mode === 'shortBreak' ? settings.shortBreakMinutes : settings.longBreakMinutes;
           set({
             isRunning: false,
             startTimestamp: null,
@@ -126,29 +142,64 @@ export const useTimerStore = create<TimerState>()(
             secondsLeft: getModeSeconds('focus', settings),
             todayPomodoros: newTodayPomodoros,
             todayDate: today,
+            sessionStartedAt: null,
+            pendingRecordSession: {
+              startedAt,
+              endedAt,
+              durationMin: breakDuration,
+              mode,
+              status: 'completed',
+            },
           });
           if (settings.autoStartNextSession) {
             setTimeout(() => get().start(), 500);
           }
         }
       },
-      interruptSession: () => {
-        const { settings, sessionStartedAt, secondsLeft } = get();
+      skipSession: () => {
+        const { mode, settings, completedPomodoros, sessionStartedAt, secondsLeft, todayDate } = get();
+        const today = getToday();
         const endedAt = new Date().toISOString();
-        const elapsedSeconds = settings.focusMinutes * 60 - secondsLeft;
-        const durationMin = Math.max(1, Math.floor(elapsedSeconds / 60));
-        const startedAt = sessionStartedAt ?? endedAt;
-        set({
-          isRunning: false,
-          startTimestamp: null,
-          pausedSecondsLeft: null,
-          sessionStartedAt: null,
-          secondsLeft: getModeSeconds('focus', settings),
-          pendingInterruptedSession: { startedAt, endedAt, durationMin },
-        });
+
+        let pendingRecordSession: PendingRecordSession | null = null;
+        if (sessionStartedAt) {
+          const totalSeconds = getModeSeconds(mode, settings);
+          const elapsedSeconds = totalSeconds - secondsLeft;
+          const durationMin = Math.max(1, Math.floor(elapsedSeconds / 60));
+          pendingRecordSession = { startedAt: sessionStartedAt, endedAt, durationMin, mode, status: 'skipped' };
+        }
+
+        if (mode === 'focus') {
+          const newCompleted = completedPomodoros + 1;
+          let newTodayPomodoros = todayDate === today ? get().todayPomodoros : 0;
+          newTodayPomodoros += 1;
+          const nextMode = newCompleted % settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak';
+          set({
+            isRunning: false,
+            startTimestamp: null,
+            pausedSecondsLeft: null,
+            completedPomodoros: newCompleted,
+            todayPomodoros: newTodayPomodoros,
+            todayDate: today,
+            mode: nextMode,
+            secondsLeft: getModeSeconds(nextMode, settings),
+            sessionStartedAt: null,
+            pendingRecordSession,
+          });
+        } else {
+          set({
+            isRunning: false,
+            startTimestamp: null,
+            pausedSecondsLeft: null,
+            mode: 'focus',
+            secondsLeft: getModeSeconds('focus', settings),
+            sessionStartedAt: null,
+            pendingRecordSession,
+          });
+        }
       },
-      clearPendingInterruptedSession: () => {
-        set({ pendingInterruptedSession: null });
+      clearPendingRecordSession: () => {
+        set({ pendingRecordSession: null });
       },
       updateSettings: (partial) => {
         const newSettings = { ...get().settings, ...partial };

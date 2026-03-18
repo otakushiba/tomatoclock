@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { useTodaySummary, useWeeklyData, useTaskDistribution } from "@/hooks/useReportData";
+import {
+  useTodaySummary, useWeeklyData, useTaskDistribution, useProjectDistribution,
+} from "@/hooks/useReportData";
 
 const ACCENT = "hsl(234 60% 60%)";
 const COLORS = [
@@ -49,17 +51,11 @@ function TodaySection() {
         </div>
       ) : (
         <div className="flex gap-3">
-          <div
-            className="flex-1 rounded-xl p-4 text-center"
-            style={{ background: "hsl(234 30% 10%)" }}
-          >
+          <div className="flex-1 rounded-xl p-4 text-center" style={{ background: "hsl(234 30% 10%)" }}>
             <div className="text-4xl font-extrabold text-white">{data?.pomodoros ?? 0}</div>
             <div className="text-xs mt-1 text-white/40">🍅 番茄數</div>
           </div>
-          <div
-            className="flex-1 rounded-xl p-4 text-center"
-            style={{ background: "hsl(234 30% 10%)" }}
-          >
+          <div className="flex-1 rounded-xl p-4 text-center" style={{ background: "hsl(234 30% 10%)" }}>
             <div className="text-4xl font-extrabold text-white">{data?.totalMinutes ?? 0}</div>
             <div className="text-xs mt-1 text-white/40">⏱ 專注分鐘</div>
           </div>
@@ -90,33 +86,56 @@ function WeeklySection() {
                   <stop offset="100%" stopColor={ACCENT} stopOpacity={0.2} />
                 </linearGradient>
               </defs>
-              <XAxis
-                dataKey="label"
-                tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: "rgba(255,255,255,0.25)", fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-                width={24}
-              />
+              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "rgba(255,255,255,0.25)", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
               <Tooltip
-                contentStyle={{
-                  background: "rgba(20,22,40,0.95)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: "12px",
-                  color: "white",
-                  fontSize: "13px",
-                }}
+                contentStyle={{ background: "rgba(20,22,40,0.95)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "white", fontSize: "13px" }}
                 formatter={(v: number) => [`${v} 🍅`, "番茄數"]}
                 cursor={{ fill: "rgba(255,255,255,0.05)" }}
               />
               <Bar dataKey="pomodoros" fill="url(#weekBarGrad)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ── 專案分佈 ──────────────────────────────────────────────────
+function ProjectSection() {
+  const { data, isLoading } = useProjectDistribution();
+
+  return (
+    <Card>
+      <SectionTitle>專案專注分佈</SectionTitle>
+      {isLoading ? (
+        <div className="flex flex-col gap-3">
+          {[1, 2, 3].map((i) => <Skeleton key={i} />)}
+        </div>
+      ) : !data || data.length === 0 ? (
+        <p className="text-white/30 text-sm text-center py-4">還沒有任何專案紀錄</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {data.map((item) => (
+            <div key={item.id} className="flex flex-col gap-1.5">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
+                  <span className="text-sm text-white/70 truncate">{item.name}</span>
+                </div>
+                <span className="text-xs text-white/40 shrink-0 ml-2">
+                  {item.minutes} 分鐘 · {item.percent}%
+                </span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: "hsl(234 30% 10%)" }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${item.percent}%`, background: item.color }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </Card>
@@ -146,10 +165,7 @@ function DistributionSection() {
                   {item.minutes} 分鐘 · {item.percent}%
                 </span>
               </div>
-              <div
-                className="h-2 rounded-full overflow-hidden"
-                style={{ background: "hsl(234 30% 10%)" }}
-              >
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: "hsl(234 30% 10%)" }}>
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{ width: `${item.percent}%`, background: COLORS[i % COLORS.length] }}
@@ -168,18 +184,12 @@ export default function Report() {
   const navigate = useNavigate();
 
   return (
-    <div
-      className="min-h-[100dvh] font-primary text-white flex flex-col"
-      style={{ background: "hsl(234 30% 10%)" }}
-    >
+    <div className="min-h-[100dvh] font-primary text-white flex flex-col" style={{ background: "hsl(234 30% 10%)" }}>
       <header
         className="glass-sm flex items-center gap-3 px-6 py-3 mx-4 mt-4 md:mx-8"
         style={{ borderRadius: "16px" }}
       >
-        <button
-          onClick={() => navigate("/")}
-          className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-        >
+        <button onClick={() => navigate("/")} className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
           <ArrowLeft size={20} className="text-white/60" />
         </button>
         <h1 className="text-lg font-extrabold tracking-tight text-white/90">📊 報告</h1>
@@ -189,6 +199,7 @@ export default function Report() {
         <div className="w-full max-w-lg flex flex-col gap-4">
           <TodaySection />
           <WeeklySection />
+          <ProjectSection />
           <DistributionSection />
         </div>
       </main>
