@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { Project } from '@/types/project';
 
 const COLORS = [
@@ -34,7 +35,7 @@ export default function ProjectModal({ open, project, onSave, onClose }: Props) 
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.6)' }}
@@ -104,6 +105,7 @@ export default function ProjectModal({ open, project, onSave, onClose }: Props) 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
