@@ -12,8 +12,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useSessionRecorder } from '@/hooks/useSessionRecorder';
 
+const MODE_BG: Record<string, string> = {
+  focus:      'hsl(322 28% 10%)',
+  shortBreak: 'hsl(155 22% 10%)',
+  longBreak:  'hsl(200 28% 10%)',
+};
+
 const Index = () => {
-  const { todayPomodoros } = useTimerStore();
+  const { todayPomodoros, mode } = useTimerStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('timer');
   const { signOut } = useAuth();
@@ -22,7 +28,10 @@ const Index = () => {
   useSessionRecorder();
 
   return (
-    <div className="min-h-[100dvh] font-primary text-white flex flex-col" style={{ background: 'hsl(234 30% 10%)' }}>
+    <div
+      className="min-h-[100dvh] font-primary text-white flex flex-col transition-colors duration-700"
+      style={{ background: MODE_BG[mode] }}
+    >
       {/* Header */}
       <header className="glass-sm flex items-center justify-between px-6 py-3 mx-4 mt-4 md:mx-8" style={{ borderRadius: '16px' }}>
         <h1 className="text-xl font-extrabold tracking-tight text-white/90">🍅 FocusFlow</h1>

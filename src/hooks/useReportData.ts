@@ -88,7 +88,7 @@ async function fetchProjectDistribution(userId: string) {
     supabase
       .from("projects")
       .select("id, name, color")
-      .eq("user_id", userId),
+      .eq("owner_id", userId),
   ]);
 
   if (sessionsRes.error) throw sessionsRes.error;

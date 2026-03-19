@@ -32,7 +32,7 @@ const TaskItem = ({
 
   return (
     <div
-      className={`glass-sm p-3 flex items-center gap-3 cursor-pointer transition-all duration-200 ${isActive ? 'ring-1 shadow-lg' : ''}`}
+      className={`glass-sm p-3 flex items-center gap-3 cursor-pointer transition-all duration-200 group ${isActive ? 'ring-1 shadow-lg' : ''}`}
       onClick={onSelect}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
@@ -66,15 +66,13 @@ const TaskItem = ({
         🍅 {task.actual_pomodoros}/{task.estimated_pomodoros}
       </span>
 
-      {/* Delete */}
-      {hovering && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="p-1 rounded-full hover:bg-red-500/20 transition-colors"
-        >
-          <Trash2 size={13} className="text-red-400/60" />
-        </button>
-      )}
+      {/* Delete — always visible on mobile, hover-reveal on desktop */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        className={`p-1 rounded-full hover:bg-red-500/20 transition-all duration-150 ${hovering ? 'opacity-100' : 'max-md:opacity-60 md:opacity-0'}`}
+      >
+        <Trash2 size={13} className="text-red-400/70" />
+      </button>
     </div>
   );
 };

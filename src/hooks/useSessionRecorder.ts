@@ -16,9 +16,13 @@ export function useSessionRecorder() {
     const unsubscribe = useTimerStore.subscribe((state, prevState) => {
       if (!user) return;
 
-      // Record any pending session (completed or skipped, focus or break)
+      // Only record focus sessions (breaks are not pomodoros)
       if (state.pendingRecordSession && !prevState.pendingRecordSession) {
         const { startedAt, endedAt, durationMin, mode, status } = state.pendingRecordSession;
+        if (mode !== 'focus') {
+          useTimerStore.getState().clearPendingRecordSession();
+          return;
+        }
         const { taskId, taskName, projectId } = getActiveInfo();
         supabase.from("pomodoro_sessions").insert({
           user_id: user.id,
