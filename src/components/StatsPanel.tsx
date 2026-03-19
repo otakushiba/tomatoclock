@@ -73,7 +73,7 @@ const StatsPanel = () => {
       </div>
 
       {/* Chart */}
-      <div className="h-48">
+      <div className="h-48" style={{ minHeight: '192px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <defs>

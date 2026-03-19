@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#1a1c2e"/>
+  <!-- Tomato body -->
+  <circle cx="256" cy="290" r="160" fill="#e8453c"/>
+  <!-- Tomato highlight -->
+  <ellipse cx="210" cy="230" rx="48" ry="32" fill="#f07070" opacity="0.5"/>
+  <!-- Leaf 1 -->
+  <ellipse cx="226" cy="122" rx="28" ry="56" fill="#4caf50" transform="rotate(-30 226 122)"/>
+  <!-- Leaf 2 -->
+  <ellipse cx="286" cy="118" rx="28" ry="56" fill="#4caf50" transform="rotate(30 286 118)"/>
+  <!-- Stem -->
+  <rect x="248" y="110" width="16" height="48" rx="8" fill="#388e3c"/>
+</svg>

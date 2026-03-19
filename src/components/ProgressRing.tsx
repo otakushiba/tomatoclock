@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTimerStore } from '@/stores/timerStore';
 import { useTaskStore } from '@/stores/taskStore';
 import { useStatsStore } from '@/stores/statsStore';
+import { useIncrementTaskPomodoro } from '@/hooks/useTasks';
 import { formatTime, playCompletionSound, MODE_LABELS, ACCENT_COLORS } from '@/lib/timer-utils';
 
 const RING_SIZE = 280;
@@ -10,9 +11,10 @@ const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 const ProgressRing = () => {
-  const { mode, secondsLeft, isRunning, settings, start, pause, reset, tick } = useTimerStore();
-  const { activeTaskId, incrementPomodoro } = useTaskStore();
+  const { mode, secondsLeft, isRunning, settings, start, pause, reset, tick, skipSession } = useTimerStore();
+  const { activeTaskId } = useTaskStore();
   const { addPomodoro } = useStatsStore();
+  const { mutate: incrementTaskPomodoro } = useIncrementTaskPomodoro();
   const [completed, setCompleted] = useState(false);
   const [particles, setParticles] = useState(false);
   const prevMode = useRef(mode);
@@ -33,10 +35,18 @@ const ProgressRing = () => {
     if (settings.soundEnabled) playCompletionSound();
     if (mode === 'focus') {
       addPomodoro(settings.focusMinutes);
-      if (activeTaskId) incrementPomodoro(activeTaskId);
+      if (activeTaskId) incrementTaskPomodoro(activeTaskId);
     }
     setTimeout(() => { setCompleted(false); setParticles(false); }, 600);
-  }, [settings, mode, addPomodoro, activeTaskId, incrementPomodoro]);
+  }, [settings, mode, addPomodoro, activeTaskId, incrementTaskPomodoro]);
+
+  const handleSkip = useCallback(() => {
+    if (mode === 'focus') {
+      addPomodoro(settings.focusMinutes);
+      if (activeTaskId) incrementTaskPomodoro(activeTaskId);
+    }
+    skipSession();
+  }, [mode, settings, activeTaskId, addPomodoro, incrementTaskPomodoro, skipSession]);
 
   useEffect(() => {
     if (isRunning) {
@@ -136,6 +146,12 @@ const ProgressRing = () => {
           className="btn-pill px-6 py-3 bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/10 text-base"
         >
           ↺ Reset
+        </button>
+        <button
+          onClick={handleSkip}
+          className="btn-pill px-6 py-3 bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/10 text-base"
+        >
+          ⏭ Skip
         </button>
       </div>
     </div>
