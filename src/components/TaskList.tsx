@@ -238,6 +238,7 @@ const TaskList = () => {
   const { mutate: createProject } = useCreateProject();
   const { mutate: updateProject } = useUpdateProject();
   const { mutate: deleteProject } = useDeleteProject();
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { activeTaskId, setActiveTask } = useTaskStore();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -255,10 +256,16 @@ const TaskList = () => {
   };
 
   const handleSave = (data: { name: string; color: string; description: string }) => {
+    setSaveError(null);
+    const onError = (err: unknown) => {
+      console.error('[Project] save error:', err);
+      const msg = (err as { message?: string })?.message || JSON.stringify(err);
+      setSaveError(msg);
+    };
     if (editingProject) {
-      updateProject({ id: editingProject.id, ...data });
+      updateProject({ id: editingProject.id, ...data }, { onError });
     } else {
-      createProject(data);
+      createProject(data, { onError });
     }
   };
 
@@ -305,11 +312,17 @@ const TaskList = () => {
         )}
       </div>
 
+      {saveError && (
+        <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+          ⚠️ {saveError}
+        </div>
+      )}
+
       <ProjectModal
         open={modalOpen}
         project={editingProject}
         onSave={handleSave}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setSaveError(null); }}
       />
     </div>
   );

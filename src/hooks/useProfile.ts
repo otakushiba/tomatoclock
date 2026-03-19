@@ -8,10 +8,10 @@ async function fetchProfile(userId: string): Promise<Profile> {
     .from("profiles")
     .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
-  return data;
+  return (data ?? null) as Profile | null;
 }
 
 async function updateProfile(userId: string, updates: ProfileUpdate): Promise<Profile> {

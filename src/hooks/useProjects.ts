@@ -11,8 +11,7 @@ export function useProjects() {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: true });
+        .eq('owner_id', user!.id);
       if (error) throw error;
       return data as Project[];
     },
@@ -25,12 +24,14 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { name: string; color: string; description: string }) => {
-      const { error } = await supabase.from('projects').insert({
-        user_id: user!.id,
-        name: input.name,
-        color: input.color,
-        description: input.description || null,
-      });
+      const { error } = await supabase
+        .from('projects')
+        .insert({
+          owner_id: user!.id,
+          name: input.name,
+          color: input.color,
+          description: input.description || null,
+        });
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects', user?.id] }),
@@ -46,7 +47,7 @@ export function useUpdateProject() {
         .from('projects')
         .update({ name: input.name, color: input.color, description: input.description || null })
         .eq('id', input.id)
-        .eq('user_id', user!.id);
+        .eq('owner_id', user!.id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects', user?.id] }),
@@ -62,7 +63,7 @@ export function useDeleteProject() {
         .from('projects')
         .delete()
         .eq('id', id)
-        .eq('user_id', user!.id);
+        .eq('owner_id', user!.id);
       if (error) throw error;
     },
     onSuccess: () => {

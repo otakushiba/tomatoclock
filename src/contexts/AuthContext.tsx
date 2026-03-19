@@ -32,27 +32,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        setSession(session);
-      })
-      .catch((err) => {
-        console.error('[Auth] getSession error:', err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    // Fallback: if auth doesn't resolve within 3s, unblock the UI
+    const fallback = setTimeout(() => setLoading(false), 3000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        clearTimeout(fallback);
         setSession(session);
+        setLoading(false);
         if ((event === "SIGNED_IN" || event === "USER_UPDATED") && session?.user) {
           await ensureProfile(session.user);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(fallback);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function signIn(email: string, password: string) {
