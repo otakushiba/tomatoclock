@@ -9,6 +9,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    lock: false
+    lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<unknown>) => fn()
   }
 });
