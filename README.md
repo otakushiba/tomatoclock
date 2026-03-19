@@ -1,30 +1,46 @@
-# 🍅 Pomodoro Timer
+# Tomatoclock
 
-A personal pomodoro timer I built to experiment with a new AI-assisted design workflow — using Claude to define requirements, generate Lovable prompts, and iterate on UI direction before writing any code.
+A personal Pomodoro timer with project & task management, built to explore an AI-assisted development workflow.
 
-Built for my own daily use. No accounts, no sync, just a fast and focused timer that lives on my phone's home screen.
+## Tech Stack
 
-## About this project
-
-This started as an experiment: how far can you get in product design by talking through decisions with an AI before opening a code editor?
-
-The workflow went roughly —
-
-1. **Claude** — talked through feature scope, generated the MVP spec, defined component structure and TypeScript types, and produced a full Lovable prompt with design specs and animation details
-2. **Lovable** — scaffolded the entire project from the prompt, handled the React/PWA setup and initial UI
-3. **Claude Code** — used for iterating on logic, fixing edge cases, and refining behaviour after the initial generation
-
-The whole thing from first conversation to working PWA took a single session. The AI tools handled the scaffolding; I just made the decisions.
+- **React + Vite** — frontend framework and build tool
+- **Supabase** — auth, database, and Row Level Security
+- **Tailwind CSS** — utility-first styling
+- **Vercel** — deployment with automatic preview on every push
 
 ## Features
 
-- Focus / Short Break / Long Break modes with customizable durations
-- Task list with estimated vs actual pomodoro tracking
-- Daily and weekly stats
-- Sound alert on timer end
-- Browser tab countdown
-- PWA — installable on mobile, works offline
+- **Pomodoro Timer** — Focus / Short Break / Long Break modes with customizable durations
+- **Project & Task Management** — organize tasks under projects, track estimated vs actual pomodoros
+- **Personal Profile** — user auth with per-account data sync via Supabase
+- **Statistics Report** — daily and weekly session summaries
+- PWA support — installable on mobile home screen
 
-## Usage
+## Design Process
 
-This is a personal tool and not actively maintained as an open source project. Feel free to fork it and adapt it for your own use.
+1. **Lovable** — used for rapid UI prototyping; scaffolded the React/PWA structure and initial component layout from a single prompt
+2. **Claude Code (in VS Code)** — handled all logic, Supabase integration, and iterative refinement after the initial generation
+3. **Supabase** — connected for auth, profile storage, and pomodoro session data with RLS enabled per user
+4. **Vercel** — deployed with automatic preview deployments on every push
+5. **GitHub branching** — `dev` branch for active development, `main` for production releases
+
+The workflow went from concept to working PWA in a single session. AI tools handled the scaffolding; decisions stayed with me.
+
+## Run Locally
+
+```bash
+# Clone the repo
+git clone https://github.com/otakushiba/tomatoclock.git
+cd tomatoclock
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+
+# Start dev server
+npm run dev
+```
