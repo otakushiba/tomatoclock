@@ -4,9 +4,9 @@ import { useTimerStore } from '@/stores/timerStore';
 import {
   useProjects, useCreateProject, useUpdateProject, useDeleteProject,
 } from '@/hooks/useProjects';
-import { useTasks, useCreateTask, useToggleTask, useDeleteTask } from '@/hooks/useTasks';
+import { useTasks, useCreateTask, useToggleTask, useDeleteTask, useClearCompletedTasks } from '@/hooks/useTasks';
 import { ACCENT_COLORS } from '@/lib/timer-utils';
-import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, FolderPlus } from 'lucide-react';
+import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, FolderPlus, CheckCheck } from 'lucide-react';
 import ProjectModal from './ProjectModal';
 import type { Project, Task } from '@/types/project';
 
@@ -171,22 +171,20 @@ const ProjectSection = ({
           <span className="text-xs text-white/30 ml-1">{tasks.length}</span>
         </button>
 
-        {hoveringHeader && (
-          <div className="flex gap-1 flex-shrink-0">
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="p-1 rounded-full hover:bg-white/10 transition-colors"
-            >
-              <Pencil size={12} className="text-white/40" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="p-1 rounded-full hover:bg-red-500/20 transition-colors"
-            >
-              <Trash2 size={12} className="text-red-400/50" />
-            </button>
-          </div>
-        )}
+        <div className={`flex gap-1 flex-shrink-0 transition-opacity duration-150 ${hoveringHeader ? 'opacity-100' : 'max-md:opacity-60 md:opacity-0'}`}>
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="p-1 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <Pencil size={12} className="text-white/40" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-1 rounded-full hover:bg-red-500/20 transition-colors"
+          >
+            <Trash2 size={12} className="text-red-400/50" />
+          </button>
+        </div>
       </div>
 
       {/* Tasks */}
@@ -236,8 +234,10 @@ const TaskList = () => {
   const { mutate: createProject } = useCreateProject();
   const { mutate: updateProject } = useUpdateProject();
   const { mutate: deleteProject } = useDeleteProject();
+  const { mutate: clearCompleted, isPending: clearingCompleted } = useClearCompletedTasks();
   const [saveError, setSaveError] = useState<string | null>(null);
   const { activeTaskId, setActiveTask } = useTaskStore();
+  const completedCount = tasks.filter((t) => t.completed).length;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -271,12 +271,32 @@ const TaskList = () => {
     <div className="glass p-5 flex flex-col gap-3 h-full">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white/90">📋 Projects & Tasks</h2>
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-        >
-          <FolderPlus size={14} /> New Project
-        </button>
+        <div className="flex items-center gap-1">
+          {completedCount > 0 && (
+            <button
+              onClick={() => {
+                if (!confirm(`Clear ${completedCount} completed task${completedCount > 1 ? 's' : ''}?`)) return;
+                // Clear active task if it was completed
+                if (activeTaskId) {
+                  const activeTask = tasks.find((t) => t.id === activeTaskId);
+                  if (activeTask?.completed) setActiveTask(null, null, null);
+                }
+                clearCompleted();
+              }}
+              disabled={clearingCompleted}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-40"
+              title={`Clear ${completedCount} completed task${completedCount > 1 ? 's' : ''}`}
+            >
+              <CheckCheck size={13} /> {completedCount}
+            </button>
+          )}
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+          >
+            <FolderPlus size={14} /> New Project
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto max-h-[360px] pr-1">

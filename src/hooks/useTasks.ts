@@ -80,3 +80,19 @@ export function useIncrementTaskPomodoro() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] }),
   });
 }
+
+export function useClearCompletedTasks() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('user_id', user!.id)
+        .eq('completed', true);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] }),
+  });
+}
