@@ -5,16 +5,22 @@ import { startOfWeek, eachDayOfInterval, format } from "date-fns";
 
 // ── 今日摘要 ────────────────────────────────────────────────
 async function fetchTodaySummary(userId: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  // Build UTC midnight → next UTC midnight so the ISO strings match
+  // the "...Z" format stored by the session recorder exactly.
+  const now = new Date();
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+
   const { data, error } = await supabase
     .from("pomodoro_sessions")
     .select("duration_min")
     .eq("user_id", userId)
     .eq("status", "completed")
-    .gte("started_at", `${today}T00:00:00`)
-    .lte("started_at", `${today}T23:59:59`);
+    .gte("started_at", startOfToday.toISOString())
+    .lt("started_at", startOfTomorrow.toISOString());
 
   if (error) throw error;
+  console.log("[TodaySummary] rows:", data.length, "range:", startOfToday.toISOString(), "→", startOfTomorrow.toISOString());
   return {
     pomodoros: data.length,
     totalMinutes: data.reduce((sum, s) => sum + (s.duration_min ?? 0), 0),
@@ -126,6 +132,7 @@ export function useTodaySummary() {
     enabled: !!user,
     refetchOnMount: 'always',
     staleTime: 0,
+    refetchInterval: 30_000, // poll every 30s as a safety net
   });
 }
 
