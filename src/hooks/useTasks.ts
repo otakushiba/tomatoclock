@@ -81,6 +81,22 @@ export function useIncrementTaskPomodoro() {
   });
 }
 
+export function useUpdateTask() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, title, project_id }: { id: string; title?: string; project_id?: string | null }) => {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ ...(title !== undefined && { title }), ...(project_id !== undefined && { project_id }) })
+        .eq('id', id)
+        .eq('user_id', user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] }),
+  });
+}
+
 export function useClearCompletedTasks() {
   const { user } = useAuth();
   const queryClient = useQueryClient();

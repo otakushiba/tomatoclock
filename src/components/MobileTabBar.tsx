@@ -1,12 +1,11 @@
-import { Timer, ClipboardList, BarChart3 } from 'lucide-react';
+import { Timer, ClipboardList } from 'lucide-react';
 
-type MobileTab = 'timer' | 'tasks' | 'stats';
+type MobileTab = 'timer' | 'tasks';
 
 const MobileTabBar = ({ active, onChange }: { active: MobileTab; onChange: (tab: MobileTab) => void }) => {
   const tabs: { id: MobileTab; icon: typeof Timer; label: string }[] = [
     { id: 'timer', icon: Timer, label: 'Timer' },
     { id: 'tasks', icon: ClipboardList, label: 'Tasks' },
-    { id: 'stats', icon: BarChart3, label: 'Stats' },
   ];
 
   return (

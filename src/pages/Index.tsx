@@ -4,7 +4,6 @@ import { useTaskStore } from '@/stores/taskStore';
 import ModeTabs from '@/components/ModeTabs';
 import ProgressRing from '@/components/ProgressRing';
 import TaskList from '@/components/TaskList';
-import StatsPanel from '@/components/StatsPanel';
 import SettingsModal from '@/components/SettingsModal';
 import MobileTabBar, { type MobileTab } from '@/components/MobileTabBar';
 import { Settings, LogOut, UserCircle, BarChart2 } from 'lucide-react';
@@ -55,7 +54,7 @@ const Index = () => {
           <button
             onClick={() => navigate('/report')}
             className="p-2 rounded-full hover:bg-white/10 transition-colors"
-            title="報告"
+            title="Report"
           >
             <BarChart2 size={22} className="text-white/50" />
           </button>
@@ -68,7 +67,7 @@ const Index = () => {
           <button
             onClick={() => navigate('/profile')}
             className="p-1 rounded-full hover:bg-white/10 transition-colors"
-            title="個人資料"
+            title="Profile"
           >
             {profile?.avatar_url ? (
               <img
@@ -83,7 +82,7 @@ const Index = () => {
           <button
             onClick={() => signOut()}
             className="p-2 rounded-full hover:bg-white/10 transition-colors"
-            title="登出"
+            title="Sign Out"
           >
             <LogOut size={22} className="text-white/50" />
           </button>
@@ -111,10 +110,9 @@ const Index = () => {
             Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/40 font-mono text-xs">Space</kbd> to start/pause
           </div>
         </div>
-        {/* Right: Tasks + Stats */}
+        {/* Right: Tasks */}
         <div className="w-[380px] flex flex-col gap-6">
           <TaskList />
-          <StatsPanel />
         </div>
       </main>
 
@@ -138,7 +136,6 @@ const Index = () => {
           </div>
         )}
         {mobileTab === 'tasks' && <TaskList />}
-        {mobileTab === 'stats' && <StatsPanel />}
       </main>
 
       <MobileTabBar active={mobileTab} onChange={setMobileTab} />

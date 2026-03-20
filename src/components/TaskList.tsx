@@ -1,34 +1,102 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTaskStore } from '@/stores/taskStore';
 import { useTimerStore } from '@/stores/timerStore';
 import {
   useProjects, useCreateProject, useUpdateProject, useDeleteProject,
 } from '@/hooks/useProjects';
-import { useTasks, useCreateTask, useToggleTask, useDeleteTask, useClearCompletedTasks } from '@/hooks/useTasks';
+import { useTasks, useCreateTask, useToggleTask, useDeleteTask, useClearCompletedTasks, useUpdateTask } from '@/hooks/useTasks';
 import { ACCENT_COLORS } from '@/lib/timer-utils';
-import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, FolderPlus, CheckCheck } from 'lucide-react';
+import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, FolderPlus, CheckCheck, Check, X } from 'lucide-react';
 import ProjectModal from './ProjectModal';
 import type { Project, Task } from '@/types/project';
 
 // ── Task row ──────────────────────────────────────────────────
 const TaskItem = ({
   task,
+  projects,
   projectColor,
   isActive,
   onSelect,
   onToggle,
   onDelete,
+  onUpdate,
 }: {
   task: Task;
+  projects: Project[];
   projectColor: string;
   isActive: boolean;
   onSelect: () => void;
   onToggle: () => void;
   onDelete: () => void;
+  onUpdate: (fields: { title?: string; project_id?: string | null }) => void;
 }) => {
   const [hovering, setHovering] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editProjectId, setEditProjectId] = useState<string | null>(task.project_id ?? null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const mode = useTimerStore((s) => s.mode);
   const accentColor = ACCENT_COLORS[mode];
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  const handleEditSave = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    const trimmed = editTitle.trim();
+    if (!trimmed) return;
+    onUpdate({ title: trimmed, project_id: editProjectId });
+    setEditing(false);
+  };
+
+  const handleEditCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditTitle(task.title);
+    setEditProjectId(task.project_id ?? null);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div
+        className="glass-sm p-3 flex flex-col gap-2"
+        style={{ borderLeft: `3px solid ${projectColor}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <input
+          ref={inputRef}
+          value={editTitle}
+          onChange={(e) => setEditTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleEditSave(e);
+            if (e.key === 'Escape') handleEditCancel(e as unknown as React.MouseEvent);
+          }}
+          className="w-full bg-white/5 border border-white/15 rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/25"
+          style={{ fontSize: '16px' }}
+        />
+        <div className="flex items-center gap-2">
+          <select
+            value={editProjectId ?? ''}
+            onChange={(e) => setEditProjectId(e.target.value || null)}
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 bg-white/5 border border-white/15 rounded-lg px-2 py-1 text-xs text-white/70 focus:outline-none"
+          >
+            <option value="">No project</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <button onClick={handleEditSave} className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/70">
+            <Check size={12} />
+          </button>
+          <button onClick={handleEditCancel} className="p-1.5 rounded-full hover:bg-white/10 text-white/40">
+            <X size={12} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -65,6 +133,14 @@ const TaskItem = ({
       <span className="text-xs whitespace-nowrap text-white/35">
         🍅 {task.actual_pomodoros}/{task.estimated_pomodoros}
       </span>
+
+      {/* Edit — hover-reveal */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+        className={`p-1 rounded-full hover:bg-white/10 transition-all duration-150 ${hovering ? 'opacity-100' : 'max-md:opacity-60 md:opacity-0'}`}
+      >
+        <Pencil size={12} className="text-white/40" />
+      </button>
 
       {/* Delete — always visible on mobile, hover-reveal on desktop */}
       <button
@@ -133,11 +209,13 @@ const AddTaskForm = ({
 const ProjectSection = ({
   project,
   tasks,
+  projects,
   onEdit,
   onDelete,
 }: {
   project: Project;
   tasks: Task[];
+  projects: Project[];
   onEdit: () => void;
   onDelete: () => void;
 }) => {
@@ -147,6 +225,7 @@ const ProjectSection = ({
   const { activeTaskId, setActiveTask } = useTaskStore();
   const { mutate: toggleTask } = useToggleTask();
   const { mutate: deleteTask } = useDeleteTask();
+  const { mutate: updateTask } = useUpdateTask();
 
   return (
     <div className="flex flex-col gap-1">
@@ -194,6 +273,7 @@ const ProjectSection = ({
             <TaskItem
               key={task.id}
               task={task}
+              projects={projects}
               projectColor={project.color}
               isActive={activeTaskId === task.id}
               onSelect={() => {
@@ -209,6 +289,7 @@ const ProjectSection = ({
                 if (activeTaskId === task.id) setActiveTask(null, null, null);
                 deleteTask(task.id);
               }}
+              onUpdate={(fields) => updateTask({ id: task.id, ...fields })}
             />
           ))}
 
@@ -324,6 +405,7 @@ const TaskList = () => {
               key={project.id}
               project={project}
               tasks={tasks.filter((t) => t.project_id === project.id)}
+              projects={projects}
               onEdit={() => handleOpenEdit(project)}
               onDelete={() => handleDeleteProject(project)}
             />

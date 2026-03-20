@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useTaskStore } from './taskStore';
 
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -18,6 +19,9 @@ export interface PendingRecordSession {
   durationMin: number;
   mode: TimerMode;
   status: 'completed' | 'skipped';
+  taskId: string | null;
+  taskName: string | null;
+  projectId: string | null;
 }
 
 interface TimerState {
@@ -111,6 +115,7 @@ export const useTimerStore = create<TimerState>()(
           const newCompleted = completedPomodoros + 1;
           newTodayPomodoros += 1;
           const nextMode = newCompleted % settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak';
+          const { activeTaskId, activeTaskName, activeProjectId } = useTaskStore.getState();
           set({
             isRunning: false,
             startTimestamp: null,
@@ -127,6 +132,9 @@ export const useTimerStore = create<TimerState>()(
               durationMin: settings.focusMinutes,
               mode: 'focus',
               status: 'completed',
+              taskId: activeTaskId,
+              taskName: activeTaskName,
+              projectId: activeProjectId,
             },
           });
           if (settings.autoStartNextSession) {
@@ -134,6 +142,7 @@ export const useTimerStore = create<TimerState>()(
           }
         } else {
           const breakDuration = mode === 'shortBreak' ? settings.shortBreakMinutes : settings.longBreakMinutes;
+          const { activeTaskId: bTaskId, activeTaskName: bTaskName, activeProjectId: bProjectId } = useTaskStore.getState();
           set({
             isRunning: false,
             startTimestamp: null,
@@ -149,6 +158,9 @@ export const useTimerStore = create<TimerState>()(
               durationMin: breakDuration,
               mode,
               status: 'completed',
+              taskId: bTaskId,
+              taskName: bTaskName,
+              projectId: bProjectId,
             },
           });
           if (settings.autoStartNextSession) {
@@ -167,7 +179,11 @@ export const useTimerStore = create<TimerState>()(
           const totalSeconds = getModeSeconds(mode, settings);
           const elapsedSeconds = totalSeconds - secondsLeft;
           const durationMin = Math.max(1, Math.floor(elapsedSeconds / 60));
-          pendingRecordSession = { startedAt: sessionStartedAt, endedAt, durationMin, mode, status: 'skipped' };
+          const { activeTaskId, activeTaskName, activeProjectId } = useTaskStore.getState();
+          pendingRecordSession = {
+            startedAt: sessionStartedAt, endedAt, durationMin, mode, status: 'skipped',
+            taskId: activeTaskId, taskName: activeTaskName, projectId: activeProjectId,
+          };
         }
 
         if (mode === 'focus') {

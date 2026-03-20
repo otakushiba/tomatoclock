@@ -4,6 +4,8 @@ import { useTaskStore } from '@/stores/taskStore';
 import { useStatsStore } from '@/stores/statsStore';
 import { useIncrementTaskPomodoro } from '@/hooks/useTasks';
 import { formatTime, playCompletionSound, MODE_LABELS, ACCENT_COLORS } from '@/lib/timer-utils';
+import { RotateCcw, SkipForward } from 'lucide-react';
+import { toast } from 'sonner';
 
 const RING_SIZE = 280;
 const STROKE_WIDTH = 10;
@@ -11,7 +13,7 @@ const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 const ProgressRing = () => {
-  const { mode, secondsLeft, isRunning, settings, start, pause, reset, tick, skipSession } = useTimerStore();
+  const { mode, secondsLeft, isRunning, sessionStartedAt, settings, start, pause, reset, tick, skipSession } = useTimerStore();
   const { activeTaskId } = useTaskStore();
   const { addPomodoro } = useStatsStore();
   const { mutate: incrementTaskPomodoro } = useIncrementTaskPomodoro();
@@ -39,6 +41,14 @@ const ProgressRing = () => {
     }
     setTimeout(() => { setCompleted(false); setParticles(false); }, 600);
   }, [settings, mode, addPomodoro, activeTaskId, incrementTaskPomodoro]);
+
+  const handleStart = useCallback(() => {
+    if (mode === 'focus' && !activeTaskId) {
+      toast.warning('Please select a task before starting the timer.', { duration: 3000 });
+      return;
+    }
+    start();
+  }, [mode, activeTaskId, start]);
 
   const handleSkip = useCallback(() => {
     // Only increment local stats if the session was actually started (not idle skip)
@@ -78,6 +88,14 @@ const ProgressRing = () => {
 
   const particleAngles = Array.from({ length: 8 }, (_, i) => (i * 360) / 8);
 
+  const finishAtLabel = (() => {
+    const finish = new Date(Date.now() + secondsLeft * 1000);
+    const hh = finish.getHours().toString().padStart(2, '0');
+    const mm = finish.getMinutes().toString().padStart(2, '0');
+    const hrs = (secondsLeft / 3600).toFixed(1);
+    return `${hh}:${mm} (${hrs}h)`;
+  })();
+
   return (
     <div className="flex flex-col items-center gap-6">
       <div className={`relative ${completed ? 'timer-complete' : ''}`}>
@@ -114,9 +132,6 @@ const ProgressRing = () => {
           >
             {formatTime(secondsLeft)}
           </span>
-          <span className="text-sm mt-1 text-white/50">
-            {MODE_LABELS[mode].emoji} {MODE_LABELS[mode].label}
-          </span>
         </div>
 
         {/* Particles */}
@@ -135,26 +150,35 @@ const ProgressRing = () => {
         ))}
       </div>
 
-      <div className="flex gap-3">
+      {/* Finish At */}
+      <div className="text-xs text-white/35 tracking-wide">
+        Finish At: {finishAtLabel}
+      </div>
+
+      <div className="flex items-center gap-3">
         <button
-          onClick={isRunning ? pause : start}
+          onClick={reset}
+          className="btn-pill p-3 bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/10"
+          title="Reset"
+        >
+          <RotateCcw size={16} />
+        </button>
+        <button
+          onClick={isRunning ? pause : handleStart}
           className="btn-pill px-8 py-3 shadow-lg text-white"
           style={{ background: accentColor }}
         >
           {isRunning ? '⏸ Pause' : '▶ Start'}
         </button>
-        <button
-          onClick={reset}
-          className="btn-pill px-6 py-3 bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/10 text-base"
-        >
-          ↺ Reset
-        </button>
-        <button
-          onClick={handleSkip}
-          className="btn-pill px-6 py-3 bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/10 text-base"
-        >
-          ⏭ Skip
-        </button>
+        {sessionStartedAt && (
+          <button
+            onClick={handleSkip}
+            className="btn-pill p-3 bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/10"
+            title="Skip"
+          >
+            <SkipForward size={16} />
+          </button>
+        )}
       </div>
     </div>
   );
