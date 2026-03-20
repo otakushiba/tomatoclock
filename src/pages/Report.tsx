@@ -40,6 +40,7 @@ function Skeleton() {
 // ── 今日摘要 ──────────────────────────────────────────────────
 function TodaySection() {
   const { data, isLoading } = useTodaySummary();
+  const isEmpty = !isLoading && (data?.pomodoros ?? 0) === 0;
 
   return (
     <Card>
@@ -48,6 +49,12 @@ function TodaySection() {
         <div className="flex gap-3">
           <div className="flex-1"><Skeleton /></div>
           <div className="flex-1"><Skeleton /></div>
+        </div>
+      ) : isEmpty ? (
+        <div className="flex flex-col items-center gap-2 py-4 text-center">
+          <span className="text-3xl">🍅</span>
+          <p className="text-sm text-white/40">今天還沒有番茄紀錄</p>
+          <p className="text-xs text-white/25">回到計時器開始專注吧！</p>
         </div>
       ) : (
         <div className="flex gap-3">
@@ -68,6 +75,7 @@ function TodaySection() {
 // ── 本週長條圖 ────────────────────────────────────────────────
 function WeeklySection() {
   const { data, isLoading } = useWeeklyData();
+  const hasData = data && data.some((d) => d.pomodoros > 0);
 
   return (
     <Card>
@@ -75,6 +83,11 @@ function WeeklySection() {
       {isLoading ? (
         <div className="h-48 flex items-center justify-center">
           <Loader2 size={24} className="animate-spin text-white/30" />
+        </div>
+      ) : !hasData ? (
+        <div className="h-48 flex flex-col items-center justify-center gap-2">
+          <span className="text-3xl">📊</span>
+          <p className="text-sm text-white/40">本週還沒有紀錄</p>
         </div>
       ) : (
         <div className="h-48">
