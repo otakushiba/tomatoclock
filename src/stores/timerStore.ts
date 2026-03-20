@@ -161,6 +161,7 @@ export const useTimerStore = create<TimerState>()(
         const today = getToday();
         const endedAt = new Date().toISOString();
 
+        // Only record a session if the timer was actually started
         let pendingRecordSession: PendingRecordSession | null = null;
         if (sessionStartedAt) {
           const totalSeconds = getModeSeconds(mode, settings);
@@ -171,8 +172,9 @@ export const useTimerStore = create<TimerState>()(
 
         if (mode === 'focus') {
           const newCompleted = completedPomodoros + 1;
+          // Only increment today's pomodoro count if the session was actually started
           let newTodayPomodoros = todayDate === today ? get().todayPomodoros : 0;
-          newTodayPomodoros += 1;
+          if (sessionStartedAt) newTodayPomodoros += 1;
           const nextMode = newCompleted % settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak';
           set({
             isRunning: false,

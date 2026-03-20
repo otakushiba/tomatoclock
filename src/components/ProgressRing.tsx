@@ -41,7 +41,9 @@ const ProgressRing = () => {
   }, [settings, mode, addPomodoro, activeTaskId, incrementTaskPomodoro]);
 
   const handleSkip = useCallback(() => {
-    if (mode === 'focus') {
+    // Only increment local stats if the session was actually started (not idle skip)
+    const { sessionStartedAt } = useTimerStore.getState();
+    if (mode === 'focus' && sessionStartedAt) {
       addPomodoro(settings.focusMinutes);
       if (activeTaskId) incrementTaskPomodoro(activeTaskId);
     }
