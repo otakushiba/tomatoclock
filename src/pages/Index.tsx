@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTimerStore } from '@/stores/timerStore';
+import { useTaskStore } from '@/stores/taskStore';
 import ModeTabs from '@/components/ModeTabs';
 import ProgressRing from '@/components/ProgressRing';
 import TaskList from '@/components/TaskList';
@@ -19,13 +20,28 @@ const MODE_BG: Record<string, string> = {
 };
 
 const Index = () => {
-  const { todayPomodoros, mode } = useTimerStore();
+  const { todayPomodoros, mode, isRunning, start, pause } = useTimerStore();
+  const { activeTaskName } = useTaskStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('timer');
   const { signOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
   useSessionRecorder();
+
+  // Keyboard shortcut: Space to start/pause
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.code === 'Space' && e.target === document.body) {
+      e.preventDefault();
+      if (isRunning) pause();
+      else start();
+    }
+  }, [isRunning, start, pause]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   return (
     <div
@@ -80,8 +96,19 @@ const Index = () => {
         <div className="flex-1 flex flex-col items-center gap-8 justify-center">
           <ModeTabs />
           <ProgressRing />
-          <div className="text-sm font-semibold text-white/30">
-            Today: 🍅 × {todayPomodoros}
+          {/* Active task display */}
+          {activeTaskName ? (
+            <div className="flex flex-col items-center gap-1 text-center">
+              <div className="text-xs text-white/30 uppercase tracking-widest font-semibold">Now Focusing On</div>
+              <div className="text-sm font-bold text-white/70 max-w-xs truncate">{activeTaskName}</div>
+            </div>
+          ) : (
+            <div className="text-sm font-semibold text-white/30">
+              Today: 🍅 × {todayPomodoros}
+            </div>
+          )}
+          <div className="text-xs text-white/20">
+            Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/40 font-mono text-xs">Space</kbd> to start/pause
           </div>
         </div>
         {/* Right: Tasks + Stats */}
@@ -97,9 +124,17 @@ const Index = () => {
           <div className="flex flex-col items-center gap-6 pt-4">
             <ModeTabs />
             <ProgressRing />
-            <div className="text-sm font-semibold text-white/30">
-              Today: 🍅 × {todayPomodoros}
-            </div>
+            {/* Active task display */}
+            {activeTaskName ? (
+              <div className="flex flex-col items-center gap-1 text-center">
+                <div className="text-xs text-white/30 uppercase tracking-widest font-semibold">Now Focusing On</div>
+                <div className="text-sm font-bold text-white/70 max-w-xs truncate">{activeTaskName}</div>
+              </div>
+            ) : (
+              <div className="text-sm font-semibold text-white/30">
+                Today: 🍅 × {todayPomodoros}
+              </div>
+            )}
           </div>
         )}
         {mobileTab === 'tasks' && <TaskList />}
