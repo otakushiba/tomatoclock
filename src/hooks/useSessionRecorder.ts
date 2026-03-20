@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTimerStore } from "@/stores/timerStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +12,7 @@ function getActiveInfo() {
 
 export function useSessionRecorder() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const unsubscribe = useTimerStore.subscribe((state, prevState) => {
@@ -23,23 +25,33 @@ export function useSessionRecorder() {
           useTimerStore.getState().clearPendingRecordSession();
           return;
         }
+
+        // Clear pending session synchronously so a second completion can't
+        // be double-inserted while the async insert is in-flight.
+        useTimerStore.getState().clearPendingRecordSession();
+
         const { taskId, taskName, projectId } = getActiveInfo();
         supabase.from("pomodoro_sessions").insert({
           user_id: user.id,
-          task_name: mode === 'focus' ? taskName : null,
-          task_id: mode === 'focus' ? taskId : null,
-          project_id: mode === 'focus' ? projectId : null,
+          task_name: taskName,
+          task_id: taskId,
+          project_id: projectId,
           started_at: startedAt,
           ended_at: endedAt,
           duration_min: durationMin,
           status,
         }).then(({ error }) => {
-          if (error) console.error("[SessionRecorder] insert error:", error.message, error.code);
+          if (error) {
+            console.error("[SessionRecorder] insert error:", error.message, error.code, error.details);
+          } else {
+            // Invalidate report cache so the Report page reflects the new
+            // session immediately — fixes "count not updating in real-time".
+            queryClient.invalidateQueries({ queryKey: ["report"] });
+          }
         });
-        useTimerStore.getState().clearPendingRecordSession();
       }
     });
 
     return unsubscribe;
-  }, [user]);
+  }, [user, queryClient]);
 }
