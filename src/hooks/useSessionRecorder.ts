@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useTimerStore } from "@/stores/timerStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,10 +44,12 @@ export function useSessionRecorder() {
         }).then(({ error }) => {
           if (error) {
             console.error("[SessionRecorder] insert error:", error.message, error.code, error.details);
+            toast.error(`無法儲存番茄紀錄: ${error.message}`, { duration: 8000 });
           } else {
             // Invalidate report cache so the Report page reflects the new
             // session immediately — fixes "count not updating in real-time".
             queryClient.invalidateQueries({ queryKey: ["report"] });
+            toast.success("🍅 番茄紀錄已儲存", { duration: 2000 });
           }
         });
       }
