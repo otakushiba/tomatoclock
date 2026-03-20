@@ -124,6 +124,8 @@ export function useTodaySummary() {
     queryKey: ["report", "today", user?.id],
     queryFn: () => fetchTodaySummary(user!.id),
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 }
 
@@ -133,6 +135,8 @@ export function useWeeklyData() {
     queryKey: ["report", "weekly", user?.id],
     queryFn: () => fetchWeeklyData(user!.id),
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 }
 
@@ -142,6 +146,8 @@ export function useTaskDistribution() {
     queryKey: ["report", "tasks", user?.id],
     queryFn: () => fetchTaskDistribution(user!.id),
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 }
 
@@ -151,5 +157,7 @@ export function useProjectDistribution() {
     queryKey: ["report", "projects", user?.id],
     queryFn: () => fetchProjectDistribution(user!.id),
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 }
