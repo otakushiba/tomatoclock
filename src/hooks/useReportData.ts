@@ -5,11 +5,19 @@ import { startOfWeek, eachDayOfInterval, format } from "date-fns";
 
 // ── 今日摘要 ────────────────────────────────────────────────
 async function fetchTodaySummary(userId: string) {
-  // Build UTC midnight → next UTC midnight so the ISO strings match
-  // the "...Z" format stored by the session recorder exactly.
   const now = new Date();
   const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+
+  // ── Diagnostic: show the last 5 raw sessions so we can see actual field values ──
+  const { data: recent } = await supabase
+    .from("pomodoro_sessions")
+    .select("started_at, status, duration_min, user_id")
+    .eq("user_id", userId)
+    .order("started_at", { ascending: false })
+    .limit(5);
+  console.log("[TodaySummary] last 5 sessions:", JSON.stringify(recent, null, 2));
+  console.log("[TodaySummary] querying range:", startOfToday.toISOString(), "→", startOfTomorrow.toISOString());
 
   const { data, error } = await supabase
     .from("pomodoro_sessions")
@@ -20,7 +28,7 @@ async function fetchTodaySummary(userId: string) {
     .lt("started_at", startOfTomorrow.toISOString());
 
   if (error) throw error;
-  console.log("[TodaySummary] rows:", data.length, "range:", startOfToday.toISOString(), "→", startOfTomorrow.toISOString());
+  console.log("[TodaySummary] matched rows:", data.length);
   return {
     pomodoros: data.length,
     totalMinutes: data.reduce((sum, s) => sum + (s.duration_min ?? 0), 0),
