@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, ".env.local") });
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: "./tests",
   timeout: 30000,
   expect: { timeout: 8000 },
   fullyParallel: false,
