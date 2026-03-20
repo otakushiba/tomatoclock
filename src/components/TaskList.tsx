@@ -196,13 +196,14 @@ const ProjectSection = ({
               task={task}
               projectColor={project.color}
               isActive={activeTaskId === task.id}
-              onSelect={() =>
+              onSelect={() => {
+                const selecting = activeTaskId !== task.id;
                 setActiveTask(
-                  activeTaskId === task.id ? null : task.id,
-                  task.title,
-                  project.id,
-                )
-              }
+                  selecting ? task.id : null,
+                  selecting ? task.title : null,
+                  selecting ? project.id : null,
+                );
+              }}
               onToggle={() => toggleTask({ id: task.id, completed: !task.completed })}
               onDelete={() => {
                 if (activeTaskId === task.id) setActiveTask(null, null, null);
