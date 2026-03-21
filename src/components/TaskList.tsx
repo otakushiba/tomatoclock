@@ -281,7 +281,7 @@ const ProjectSection = ({
                 setActiveTask(
                   selecting ? task.id : null,
                   selecting ? task.title : null,
-                  selecting ? project.id : null,
+                  selecting ? (task.project_id ?? project.id) : null,
                 );
               }}
               onToggle={() => toggleTask({ id: task.id, completed: !task.completed })}

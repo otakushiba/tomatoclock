@@ -12,6 +12,7 @@ import {
 } from "date-fns";
 import {
   useReportSessions,
+  useUpdateSessionProject,
   type PeriodType,
   type ReportSession,
   type ReportProject,
@@ -469,6 +470,8 @@ function DetailTab({
     () => new Map(projects.map((p) => [p.id, p])),
     [projects]
   );
+  const [editingProjectFor, setEditingProjectFor] = useState<string | null>(null);
+  const { mutate: updateSessionProject } = useUpdateSessionProject();
 
   if (sessions.length === 0) {
     return (
@@ -540,9 +543,28 @@ function DetailTab({
 
               {/* Project badge + task name */}
               <div className="flex flex-col gap-1 min-w-0">
-                {project ? (
+                {editingProjectFor === s.id ? (
+                  <select
+                    autoFocus
+                    defaultValue={s.project_id ?? ""}
+                    onChange={(e) => {
+                      updateSessionProject({ sessionId: s.id, projectId: e.target.value || null });
+                      setEditingProjectFor(null);
+                    }}
+                    onBlur={() => setEditingProjectFor(null)}
+                    className="self-start text-xs rounded-full px-2 py-0.5 focus:outline-none"
+                    style={{ background: "hsl(234 30% 18%)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.2)" }}
+                  >
+                    <option value="">No Project</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                ) : project ? (
                   <span
-                    className="self-start text-xs font-semibold px-2 py-0.5 rounded-full truncate max-w-full"
+                    onClick={() => setEditingProjectFor(s.id)}
+                    className="self-start text-xs font-semibold px-2 py-0.5 rounded-full truncate max-w-full cursor-pointer hover:opacity-75"
+                    title="Click to change project"
                     style={{
                       background: `${project.color}22`,
                       color: project.color,
@@ -552,8 +574,12 @@ function DetailTab({
                     {project.name}
                   </span>
                 ) : (
-                  <span className="self-start text-xs text-white/20 px-2 py-0.5 rounded-full"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <span
+                    onClick={() => setEditingProjectFor(s.id)}
+                    className="self-start text-xs text-white/30 px-2 py-0.5 rounded-full cursor-pointer hover:text-white/50"
+                    title="Click to assign project"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  >
                     No Project
                   </span>
                 )}

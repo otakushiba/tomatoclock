@@ -47,7 +47,10 @@ interface TimerState {
   updateSettings: (settings: Partial<Settings>) => void;
 }
 
-const getToday = () => new Date().toISOString().slice(0, 10);
+const getToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 const getModeSeconds = (mode: TimerMode, settings: Settings) => {
   switch (mode) {
@@ -116,6 +119,7 @@ export const useTimerStore = create<TimerState>()(
           newTodayPomodoros += 1;
           const nextMode = newCompleted % settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak';
           const { activeTaskId, activeTaskName, activeProjectId } = useTaskStore.getState();
+          const resolvedProjectId = activeProjectId ?? null;
           set({
             isRunning: false,
             startTimestamp: null,
@@ -134,7 +138,7 @@ export const useTimerStore = create<TimerState>()(
               status: 'completed',
               taskId: activeTaskId,
               taskName: activeTaskName,
-              projectId: activeProjectId,
+              projectId: resolvedProjectId,
             },
           });
           if (settings.autoStartNextSession) {
@@ -143,6 +147,7 @@ export const useTimerStore = create<TimerState>()(
         } else {
           const breakDuration = mode === 'shortBreak' ? settings.shortBreakMinutes : settings.longBreakMinutes;
           const { activeTaskId: bTaskId, activeTaskName: bTaskName, activeProjectId: bProjectId } = useTaskStore.getState();
+          const resolvedBreakProjectId = bProjectId ?? null;
           set({
             isRunning: false,
             startTimestamp: null,
@@ -160,7 +165,7 @@ export const useTimerStore = create<TimerState>()(
               status: 'completed',
               taskId: bTaskId,
               taskName: bTaskName,
-              projectId: bProjectId,
+              projectId: resolvedBreakProjectId,
             },
           });
           if (settings.autoStartNextSession) {

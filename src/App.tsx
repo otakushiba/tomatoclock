@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useSessionRecorder } from "@/hooks/useSessionRecorder";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Profile from "./pages/Profile.tsx";
@@ -42,10 +43,18 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 const queryClient = new QueryClient();
 
+// Mounted inside both QueryClientProvider and AuthProvider so it's always
+// active regardless of which page the user is on.
+function GlobalHooks() {
+  useSessionRecorder();
+  return null;
+}
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <GlobalHooks />
         <TooltipProvider>
           <Toaster />
           <Sonner />

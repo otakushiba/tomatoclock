@@ -10,7 +10,6 @@ import { Settings, LogOut, UserCircle, BarChart2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
-import { useSessionRecorder } from '@/hooks/useSessionRecorder';
 
 const MODE_BG: Record<string, string> = {
   focus:      'hsl(322 28% 10%)',
@@ -26,7 +25,6 @@ const Index = () => {
   const { signOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
-  useSessionRecorder();
 
   // Keyboard shortcut: Space to start/pause
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
