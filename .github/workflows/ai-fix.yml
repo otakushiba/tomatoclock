@@ -1,0 +1,57 @@
+name: AI Auto Fix
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  fix:
+    if: github.event.label.name == 'ai-fix'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install deps
+        run: bun install
+
+      - name: Claude Fix
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          npm i -g @anthropic-ai/claude-code
+          
+          BRANCH="ai-fix/issue-$ISSUE_NUMBER"
+          git checkout -b $BRANCH
+          
+          claude --print "
+          這是一個番茄鐘專案（React + Vite + TypeScript + Supabase）。
+          
+          Issue #$ISSUE_NUMBER：$ISSUE_TITLE
+          描述：$ISSUE_BODY
+          
+          請閱讀 src/ 資料夾的程式碼，找到問題並修復。
+          直接修改檔案，不要只給建議。
+          "
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: AI auto fix for issue #$ISSUE_NUMBER"
+          git push origin $BRANCH
+          
+          gh pr create \
+            --title "fix: Auto fix for issue #$ISSUE_NUMBER" \
+            --body "AI 自動修復 #$ISSUE_NUMBER，請 review 後再 merge。" \
+            --base main \
+            --head $BRANCH \
+            --repo $REPO
