@@ -1,0 +1,53 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          git diff origin/main...HEAD > pr_diff.txt
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          cat pr_diff.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Claude Review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          npm i -g @anthropic-ai/claude-code
+          
+          REVIEW=$(claude --print "
+          你是一個 code reviewer，請 review 以下這個番茄鐘 React/TypeScript 專案的 PR diff。
+          
+          專案技術棧：React + Vite + TypeScript + Tailwind + Supabase
+          
+          請檢查：
+          1. Bug 或邏輯錯誤
+          2. TypeScript 型別問題
+          3. Supabase 查詢有沒有考慮 RLS
+          4. 效能問題
+          5. 值得稱讚的地方
+          
+          用繁體中文回覆，格式要清楚。
+          
+          Diff：
+          $(cat pr_diff.txt)
+          ")
+          
+          gh pr comment $PR_NUMBER --repo $REPO --body "$REVIEW"
