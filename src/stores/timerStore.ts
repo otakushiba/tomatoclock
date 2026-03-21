@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useTaskStore } from './taskStore';
 
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -18,6 +19,9 @@ export interface PendingRecordSession {
   durationMin: number;
   mode: TimerMode;
   status: 'completed' | 'skipped';
+  taskId: string | null;
+  taskName: string | null;
+  projectId: string | null;
 }
 
 interface TimerState {
@@ -43,7 +47,10 @@ interface TimerState {
   updateSettings: (settings: Partial<Settings>) => void;
 }
 
-const getToday = () => new Date().toISOString().slice(0, 10);
+const getToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 const getModeSeconds = (mode: TimerMode, settings: Settings) => {
   switch (mode) {
@@ -111,6 +118,8 @@ export const useTimerStore = create<TimerState>()(
           const newCompleted = completedPomodoros + 1;
           newTodayPomodoros += 1;
           const nextMode = newCompleted % settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak';
+          const { activeTaskId, activeTaskName, activeProjectId } = useTaskStore.getState();
+          const resolvedProjectId = activeProjectId ?? null;
           set({
             isRunning: false,
             startTimestamp: null,
@@ -127,6 +136,9 @@ export const useTimerStore = create<TimerState>()(
               durationMin: settings.focusMinutes,
               mode: 'focus',
               status: 'completed',
+              taskId: activeTaskId,
+              taskName: activeTaskName,
+              projectId: resolvedProjectId,
             },
           });
           if (settings.autoStartNextSession) {
@@ -134,6 +146,8 @@ export const useTimerStore = create<TimerState>()(
           }
         } else {
           const breakDuration = mode === 'shortBreak' ? settings.shortBreakMinutes : settings.longBreakMinutes;
+          const { activeTaskId: bTaskId, activeTaskName: bTaskName, activeProjectId: bProjectId } = useTaskStore.getState();
+          const resolvedBreakProjectId = bProjectId ?? null;
           set({
             isRunning: false,
             startTimestamp: null,
@@ -149,6 +163,9 @@ export const useTimerStore = create<TimerState>()(
               durationMin: breakDuration,
               mode,
               status: 'completed',
+              taskId: bTaskId,
+              taskName: bTaskName,
+              projectId: resolvedBreakProjectId,
             },
           });
           if (settings.autoStartNextSession) {
@@ -161,18 +178,24 @@ export const useTimerStore = create<TimerState>()(
         const today = getToday();
         const endedAt = new Date().toISOString();
 
+        // Only record a session if the timer was actually started
         let pendingRecordSession: PendingRecordSession | null = null;
         if (sessionStartedAt) {
           const totalSeconds = getModeSeconds(mode, settings);
           const elapsedSeconds = totalSeconds - secondsLeft;
           const durationMin = Math.max(1, Math.floor(elapsedSeconds / 60));
-          pendingRecordSession = { startedAt: sessionStartedAt, endedAt, durationMin, mode, status: 'skipped' };
+          const { activeTaskId, activeTaskName, activeProjectId } = useTaskStore.getState();
+          pendingRecordSession = {
+            startedAt: sessionStartedAt, endedAt, durationMin, mode, status: 'skipped',
+            taskId: activeTaskId, taskName: activeTaskName, projectId: activeProjectId,
+          };
         }
 
         if (mode === 'focus') {
           const newCompleted = completedPomodoros + 1;
+          // Only increment today's pomodoro count if the session was actually started
           let newTodayPomodoros = todayDate === today ? get().todayPomodoros : 0;
-          newTodayPomodoros += 1;
+          if (sessionStartedAt) newTodayPomodoros += 1;
           const nextMode = newCompleted % settings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak';
           set({
             isRunning: false,

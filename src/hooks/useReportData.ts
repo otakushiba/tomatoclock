@@ -1,155 +1,83 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { startOfWeek, eachDayOfInterval, format } from "date-fns";
 
-// ── 今日摘要 ────────────────────────────────────────────────
-async function fetchTodaySummary(userId: string) {
-  const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await supabase
-    .from("pomodoro_sessions")
-    .select("duration_min")
-    .eq("user_id", userId)
-    .eq("status", "completed")
-    .gte("started_at", `${today}T00:00:00`)
-    .lte("started_at", `${today}T23:59:59`);
+export type PeriodType = "week" | "month" | "year";
 
-  if (error) throw error;
-  return {
-    pomodoros: data.length,
-    totalMinutes: data.reduce((sum, s) => sum + (s.duration_min ?? 0), 0),
-  };
+export interface ReportSession {
+  id: string;
+  started_at: string;
+  ended_at: string | null;
+  duration_min: number;
+  task_id: string | null;
+  task_name: string | null;
+  project_id: string | null;
 }
 
-// ── 本週每天番茄數 ──────────────────────────────────────────
-async function fetchWeeklyData(userId: string) {
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const { data, error } = await supabase
-    .from("pomodoro_sessions")
-    .select("started_at")
-    .eq("user_id", userId)
-    .eq("status", "completed")
-    .gte("started_at", weekStart.toISOString());
+export interface ReportProject {
+  id: string;
+  name: string;
+  color: string;
+}
 
-  if (error) throw error;
+export interface ReportData {
+  sessions: ReportSession[];
+  projects: ReportProject[];
+}
 
-  const days = eachDayOfInterval({ start: weekStart, end: new Date() });
-  const dayMap: Record<string, number> = {};
-  days.forEach((d) => { dayMap[format(d, "yyyy-MM-dd")] = 0; });
-  data.forEach((s) => {
-    const date = (s.started_at as string).slice(0, 10);
-    if (date in dayMap) dayMap[date]++;
-  });
-
-  const DAY_ZH = ["一", "二", "三", "四", "五", "六", "日"];
-  return Object.entries(dayMap).map(([date, pomodoros]) => {
-    const d = new Date(date + "T12:00:00");
-    return { date, label: DAY_ZH[d.getDay() === 0 ? 6 : d.getDay() - 1], pomodoros };
+export function useUpdateSessionProject() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sessionId, projectId }: { sessionId: string; projectId: string | null }) => {
+      const { error } = await supabase
+        .from("pomodoro_sessions")
+        .update({ project_id: projectId })
+        .eq("id", sessionId)
+        .eq("user_id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["report"] }),
   });
 }
 
-// ── 各任務專注時間分佈 ──────────────────────────────────────
-async function fetchTaskDistribution(userId: string) {
-  const { data, error } = await supabase
-    .from("pomodoro_sessions")
-    .select("task_name, duration_min")
-    .eq("user_id", userId)
-    .eq("status", "completed");
-
-  if (error) throw error;
-
-  const map: Record<string, number> = {};
-  data.forEach((s) => {
-    const key = s.task_name ?? "（未指定任務）";
-    map[key] = (map[key] ?? 0) + (s.duration_min ?? 0);
-  });
-
-  const total = Object.values(map).reduce((a, b) => a + b, 0);
-  return Object.entries(map)
-    .map(([name, minutes]) => ({
-      name,
-      minutes,
-      percent: total > 0 ? Math.round((minutes / total) * 100) : 0,
-    }))
-    .sort((a, b) => b.minutes - a.minutes)
-    .slice(0, 8);
-}
-
-// ── 各專案專注時間分佈 ──────────────────────────────────────
-async function fetchProjectDistribution(userId: string) {
-  // Fetch sessions with project_id
-  const [sessionsRes, projectsRes] = await Promise.all([
-    supabase
-      .from("pomodoro_sessions")
-      .select("project_id, duration_min")
-      .eq("user_id", userId)
-      .eq("status", "completed")
-      .not("project_id", "is", null),
-    supabase
-      .from("projects")
-      .select("id, name, color")
-      .eq("user_id", userId),
-  ]);
-
-  if (sessionsRes.error) throw sessionsRes.error;
-  if (projectsRes.error) throw projectsRes.error;
-
-  const projectMap = new Map(projectsRes.data.map((p) => [p.id, p]));
-
-  const minutesByProject: Record<string, number> = {};
-  sessionsRes.data.forEach((s) => {
-    if (!s.project_id) return;
-    minutesByProject[s.project_id] = (minutesByProject[s.project_id] ?? 0) + (s.duration_min ?? 0);
-  });
-
-  const total = Object.values(minutesByProject).reduce((a, b) => a + b, 0);
-  return Object.entries(minutesByProject)
-    .map(([projectId, minutes]) => {
-      const project = projectMap.get(projectId);
+// Uses LOCAL time boundaries so the user's "today/this week" is correct
+// regardless of their UTC offset.
+// started_at is stored as UTC timestamptz, so toISOString() gives the correct UTC comparison.
+export function useReportSessions(start: Date, end: Date) {
+  const { user } = useAuth();
+  return useQuery<ReportData>({
+    queryKey: ["report", "sessions", user?.id, start.toISOString(), end.toISOString()],
+    queryFn: async () => {
+      const [sessRes, projRes] = await Promise.all([
+        supabase
+          .from("pomodoro_sessions")
+          .select("id, started_at, ended_at, duration_min, task_id, task_name, project_id, status")
+          .eq("user_id", user!.id)
+          .gte("started_at", start.toISOString())
+          .lt("started_at", end.toISOString())
+          .order("started_at", { ascending: false }),
+        supabase
+          .from("projects")
+          .select("id, name, color")
+          .eq("owner_id", user!.id),
+      ]);
+      if (sessRes.error) {
+        console.error("[Report] sessions query error:", sessRes.error);
+        throw sessRes.error;
+      }
+      if (projRes.error) {
+        console.error("[Report] projects query error:", projRes.error);
+        throw projRes.error;
+      }
       return {
-        id: projectId,
-        name: project?.name ?? "（已刪除專案）",
-        color: project?.color ?? "#666",
-        minutes,
-        percent: total > 0 ? Math.round((minutes / total) * 100) : 0,
+        sessions: sessRes.data as ReportSession[],
+        projects: projRes.data as ReportProject[],
       };
-    })
-    .sort((a, b) => b.minutes - a.minutes);
-}
-
-// ── Hooks ───────────────────────────────────────────────────
-export function useTodaySummary() {
-  const { user } = useAuth();
-  return useQuery({
-    queryKey: ["report", "today", user?.id],
-    queryFn: () => fetchTodaySummary(user!.id),
+    },
     enabled: !!user,
-  });
-}
-
-export function useWeeklyData() {
-  const { user } = useAuth();
-  return useQuery({
-    queryKey: ["report", "weekly", user?.id],
-    queryFn: () => fetchWeeklyData(user!.id),
-    enabled: !!user,
-  });
-}
-
-export function useTaskDistribution() {
-  const { user } = useAuth();
-  return useQuery({
-    queryKey: ["report", "tasks", user?.id],
-    queryFn: () => fetchTaskDistribution(user!.id),
-    enabled: !!user,
-  });
-}
-
-export function useProjectDistribution() {
-  const { user } = useAuth();
-  return useQuery({
-    queryKey: ["report", "projects", user?.id],
-    queryFn: () => fetchProjectDistribution(user!.id),
-    enabled: !!user,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 30_000,
   });
 }

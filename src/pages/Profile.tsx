@@ -15,7 +15,7 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 資料載入後填入表單
+  // Populate form once profile data loads
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name ?? "");
@@ -41,7 +41,7 @@ export default function Profile() {
           setTimeout(() => setSaved(false), 2000);
         },
         onError: (err) => {
-          setError(err instanceof Error ? err.message : "儲存失敗，請再試一次");
+          setError(err instanceof Error ? err.message : "Failed to save. Please try again.");
         },
       }
     );
@@ -66,7 +66,7 @@ export default function Profile() {
         >
           <ArrowLeft size={20} className="text-white/60" />
         </button>
-        <h1 className="text-lg font-extrabold tracking-tight text-white/90">個人資料</h1>
+        <h1 className="text-lg font-extrabold tracking-tight text-white/90">Profile</h1>
       </header>
 
       {/* Content */}
@@ -118,13 +118,13 @@ export default function Profile() {
                 {/* Display Name */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-                    顯示名稱
+                    Display Name
                   </label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="你的名字"
+                    placeholder="Your name"
                     maxLength={50}
                     className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all"
                     style={{
@@ -139,7 +139,7 @@ export default function Profile() {
                 {/* Avatar URL */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-                    頭像 URL
+                    Avatar URL
                   </label>
                   <input
                     type="url"
@@ -159,12 +159,12 @@ export default function Profile() {
                 {/* Bio */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-                    個人簡介
+                    Bio
                   </label>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="介紹一下自己…"
+                    placeholder="Tell us about yourself…"
                     rows={3}
                     maxLength={200}
                     className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none resize-none transition-all"
@@ -192,11 +192,11 @@ export default function Profile() {
                 onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(234 60% 55%)")}
               >
                 {isUpdating ? (
-                  <><Loader2 size={16} className="animate-spin" /> 儲存中…</>
+                  <><Loader2 size={16} className="animate-spin" /> Saving…</>
                 ) : saved ? (
-                  <><Check size={16} /> 已儲存！</>
+                  <><Check size={16} /> Saved!</>
                 ) : (
-                  "儲存變更"
+                  "Save Changes"
                 )}
               </button>
             </form>

@@ -1,38 +1,106 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTaskStore } from '@/stores/taskStore';
 import { useTimerStore } from '@/stores/timerStore';
 import {
   useProjects, useCreateProject, useUpdateProject, useDeleteProject,
 } from '@/hooks/useProjects';
-import { useTasks, useCreateTask, useToggleTask, useDeleteTask } from '@/hooks/useTasks';
+import { useTasks, useCreateTask, useToggleTask, useDeleteTask, useClearCompletedTasks, useUpdateTask } from '@/hooks/useTasks';
 import { ACCENT_COLORS } from '@/lib/timer-utils';
-import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, FolderPlus } from 'lucide-react';
+import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, FolderPlus, CheckCheck, Check, X } from 'lucide-react';
 import ProjectModal from './ProjectModal';
 import type { Project, Task } from '@/types/project';
 
 // ── Task row ──────────────────────────────────────────────────
 const TaskItem = ({
   task,
+  projects,
   projectColor,
   isActive,
   onSelect,
   onToggle,
   onDelete,
+  onUpdate,
 }: {
   task: Task;
+  projects: Project[];
   projectColor: string;
   isActive: boolean;
   onSelect: () => void;
   onToggle: () => void;
   onDelete: () => void;
+  onUpdate: (fields: { title?: string; project_id?: string | null }) => void;
 }) => {
   const [hovering, setHovering] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editProjectId, setEditProjectId] = useState<string | null>(task.project_id ?? null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const mode = useTimerStore((s) => s.mode);
   const accentColor = ACCENT_COLORS[mode];
 
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  const handleEditSave = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    const trimmed = editTitle.trim();
+    if (!trimmed) return;
+    onUpdate({ title: trimmed, project_id: editProjectId });
+    setEditing(false);
+  };
+
+  const handleEditCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditTitle(task.title);
+    setEditProjectId(task.project_id ?? null);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div
+        className="glass-sm p-3 flex flex-col gap-2"
+        style={{ borderLeft: `3px solid ${projectColor}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <input
+          ref={inputRef}
+          value={editTitle}
+          onChange={(e) => setEditTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleEditSave(e);
+            if (e.key === 'Escape') handleEditCancel(e as unknown as React.MouseEvent);
+          }}
+          className="w-full bg-white/5 border border-white/15 rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/25"
+          style={{ fontSize: '16px' }}
+        />
+        <div className="flex items-center gap-2">
+          <select
+            value={editProjectId ?? ''}
+            onChange={(e) => setEditProjectId(e.target.value || null)}
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 bg-white/5 border border-white/15 rounded-lg px-2 py-1 text-xs text-white/70 focus:outline-none"
+          >
+            <option value="">No project</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <button onClick={handleEditSave} className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/70">
+            <Check size={12} />
+          </button>
+          <button onClick={handleEditCancel} className="p-1.5 rounded-full hover:bg-white/10 text-white/40">
+            <X size={12} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`glass-sm p-3 flex items-center gap-3 cursor-pointer transition-all duration-200 ${isActive ? 'ring-1 shadow-lg' : ''}`}
+      className={`glass-sm p-3 flex items-center gap-3 cursor-pointer transition-all duration-200 group ${isActive ? 'ring-1 shadow-lg' : ''}`}
       onClick={onSelect}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
@@ -66,15 +134,21 @@ const TaskItem = ({
         🍅 {task.actual_pomodoros}/{task.estimated_pomodoros}
       </span>
 
-      {/* Delete */}
-      {hovering && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="p-1 rounded-full hover:bg-red-500/20 transition-colors"
-        >
-          <Trash2 size={13} className="text-red-400/60" />
-        </button>
-      )}
+      {/* Edit — hover-reveal */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+        className={`p-1 rounded-full hover:bg-white/10 transition-all duration-150 ${hovering ? 'opacity-100' : 'max-md:opacity-60 md:opacity-0'}`}
+      >
+        <Pencil size={12} className="text-white/40" />
+      </button>
+
+      {/* Delete — always visible on mobile, hover-reveal on desktop */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        className={`p-1 rounded-full hover:bg-red-500/20 transition-all duration-150 ${hovering ? 'opacity-100' : 'max-md:opacity-60 md:opacity-0'}`}
+      >
+        <Trash2 size={13} className="text-red-400/70" />
+      </button>
     </div>
   );
 };
@@ -135,11 +209,13 @@ const AddTaskForm = ({
 const ProjectSection = ({
   project,
   tasks,
+  projects,
   onEdit,
   onDelete,
 }: {
   project: Project;
   tasks: Task[];
+  projects: Project[];
   onEdit: () => void;
   onDelete: () => void;
 }) => {
@@ -149,6 +225,7 @@ const ProjectSection = ({
   const { activeTaskId, setActiveTask } = useTaskStore();
   const { mutate: toggleTask } = useToggleTask();
   const { mutate: deleteTask } = useDeleteTask();
+  const { mutate: updateTask } = useUpdateTask();
 
   return (
     <div className="flex flex-col gap-1">
@@ -173,22 +250,20 @@ const ProjectSection = ({
           <span className="text-xs text-white/30 ml-1">{tasks.length}</span>
         </button>
 
-        {hoveringHeader && (
-          <div className="flex gap-1 flex-shrink-0">
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="p-1 rounded-full hover:bg-white/10 transition-colors"
-            >
-              <Pencil size={12} className="text-white/40" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="p-1 rounded-full hover:bg-red-500/20 transition-colors"
-            >
-              <Trash2 size={12} className="text-red-400/50" />
-            </button>
-          </div>
-        )}
+        <div className={`flex gap-1 flex-shrink-0 transition-opacity duration-150 ${hoveringHeader ? 'opacity-100' : 'max-md:opacity-60 md:opacity-0'}`}>
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="p-1 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <Pencil size={12} className="text-white/40" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-1 rounded-full hover:bg-red-500/20 transition-colors"
+          >
+            <Trash2 size={12} className="text-red-400/50" />
+          </button>
+        </div>
       </div>
 
       {/* Tasks */}
@@ -198,20 +273,23 @@ const ProjectSection = ({
             <TaskItem
               key={task.id}
               task={task}
+              projects={projects}
               projectColor={project.color}
               isActive={activeTaskId === task.id}
-              onSelect={() =>
+              onSelect={() => {
+                const selecting = activeTaskId !== task.id;
                 setActiveTask(
-                  activeTaskId === task.id ? null : task.id,
-                  task.title,
-                  project.id,
-                )
-              }
+                  selecting ? task.id : null,
+                  selecting ? task.title : null,
+                  selecting ? (task.project_id ?? project.id) : null,
+                );
+              }}
               onToggle={() => toggleTask({ id: task.id, completed: !task.completed })}
               onDelete={() => {
                 if (activeTaskId === task.id) setActiveTask(null, null, null);
                 deleteTask(task.id);
               }}
+              onUpdate={(fields) => updateTask({ id: task.id, ...fields })}
             />
           ))}
 
@@ -238,8 +316,10 @@ const TaskList = () => {
   const { mutate: createProject } = useCreateProject();
   const { mutate: updateProject } = useUpdateProject();
   const { mutate: deleteProject } = useDeleteProject();
+  const { mutate: clearCompleted, isPending: clearingCompleted } = useClearCompletedTasks();
   const [saveError, setSaveError] = useState<string | null>(null);
   const { activeTaskId, setActiveTask } = useTaskStore();
+  const completedCount = tasks.filter((t) => t.completed).length;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -273,12 +353,32 @@ const TaskList = () => {
     <div className="glass p-5 flex flex-col gap-3 h-full">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white/90">📋 Projects & Tasks</h2>
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-        >
-          <FolderPlus size={14} /> New Project
-        </button>
+        <div className="flex items-center gap-1">
+          {completedCount > 0 && (
+            <button
+              onClick={() => {
+                if (!confirm(`Clear ${completedCount} completed task${completedCount > 1 ? 's' : ''}?`)) return;
+                // Clear active task if it was completed
+                if (activeTaskId) {
+                  const activeTask = tasks.find((t) => t.id === activeTaskId);
+                  if (activeTask?.completed) setActiveTask(null, null, null);
+                }
+                clearCompleted();
+              }}
+              disabled={clearingCompleted}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-40"
+              title={`Clear ${completedCount} completed task${completedCount > 1 ? 's' : ''}`}
+            >
+              <CheckCheck size={13} /> {completedCount}
+            </button>
+          )}
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+          >
+            <FolderPlus size={14} /> New Project
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto max-h-[360px] pr-1">
@@ -305,6 +405,7 @@ const TaskList = () => {
               key={project.id}
               project={project}
               tasks={tasks.filter((t) => t.project_id === project.id)}
+              projects={projects}
               onEdit={() => handleOpenEdit(project)}
               onDelete={() => handleDeleteProject(project)}
             />

@@ -24,10 +24,10 @@ export default function Login() {
         await signIn(email, password);
       } else {
         await signUp(email, password);
-        setMessage("註冊成功！請確認寄送到信箱的驗證信。");
+        setMessage("Account created! Check your email to confirm your address.");
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "發生錯誤，請再試一次");
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export default function Login() {
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold text-white tracking-tight">🍅 FocusFlow</h1>
-          <p className="mt-2 text-white/40 text-sm">專注，一個番茄鐘接著一個</p>
+          <p className="mt-2 text-white/40 text-sm">Stay focused, one pomodoro at a time.</p>
         </div>
 
         {/* Card */}
@@ -66,7 +66,7 @@ export default function Login() {
                   color: mode === m ? "white" : "hsl(234 10% 50%)",
                 }}
               >
-                {m === "login" ? "登入" : "註冊"}
+                {m === "login" ? "Log In" : "Sign Up"}
               </button>
             ))}
           </div>
@@ -94,7 +94,7 @@ export default function Login() {
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-                密碼
+                Password
               </label>
               <input
                 type="password"
@@ -102,7 +102,7 @@ export default function Login() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="至少 6 個字元"
+                placeholder="At least 6 characters"
                 className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all"
                 style={{
                   background: "hsl(234 30% 10%)",
@@ -128,7 +128,7 @@ export default function Login() {
               onMouseEnter={(e) => !loading && (e.currentTarget.style.background = "hsl(234 60% 62%)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(234 60% 55%)")}
             >
-              {loading ? "處理中…" : mode === "login" ? "登入" : "建立帳號"}
+              {loading ? "Please wait…" : mode === "login" ? "Log In" : "Create Account"}
             </button>
           </form>
         </div>
