@@ -9,6 +9,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextValue>({
   signIn: async () => {},
   signUp: async () => {},
   signOut: async () => {},
+  signInWithGoogle: async () => {},
 });
 
 async function ensureProfile(user: User) {
@@ -67,8 +69,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   }
 
+  async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) throw error;
+  }
+
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signIn, signUp, signOut, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );

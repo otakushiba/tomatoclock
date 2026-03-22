@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useSessionRecorder } from "@/hooks/useSessionRecorder";
+import { useSoundPlayer } from "@/hooks/useSoundPlayer";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Profile from "./pages/Profile.tsx";
@@ -47,6 +48,7 @@ const queryClient = new QueryClient();
 // active regardless of which page the user is on.
 function GlobalHooks() {
   useSessionRecorder();
+  useSoundPlayer();
   return null;
 }
 
